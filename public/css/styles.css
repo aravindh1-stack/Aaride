@@ -1385,6 +1385,23 @@ body {
   font-weight: 800;
 }
 
+/* File Upload Dropzone */
+.file-upload-dropzone {
+  border: 2px dashed #CBD5E1;
+  border-radius: var(--radius-md);
+  padding: 1.75rem 1.5rem;
+  text-align: center;
+  background: #FAFBFD;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.file-upload-dropzone:hover,
+.file-upload-dropzone.dragover {
+  border-color: var(--brand-teal);
+  background: #F0FDFA;
+}
+
 @media (max-width: 992px) {
   .saas-kpi-grid {
     grid-template-columns: repeat(2, 1fr);

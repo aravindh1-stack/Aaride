@@ -771,8 +771,18 @@
             </div>
 
             <div class="form-field span-full">
-              <label for="adminDocFileUrl">Supabase Storage Document File URL *</label>
-              <input type="url" id="adminDocFileUrl" required class="saas-input" placeholder="https://prbjpbsqzpxjdftjujjq.supabase.co/storage/v1/object/public/vault/doc.pdf" />
+              <label for="adminDocFileInput">Choose Document File (PDF, PNG, JPG) *</label>
+              <div class="file-upload-dropzone" onclick="document.getElementById('adminDocFileInput').click()">
+                <i class="fa-solid fa-cloud-arrow-up" style="font-size: 2rem; color: var(--brand-teal); margin-bottom: 0.5rem;"></i>
+                <div style="font-size: 0.95rem; font-weight: 700; color: #0F172A;">Click to browse or drop document file here</div>
+                <div style="font-size: 0.78rem; color: #64748B; margin-top: 0.25rem;">
+                  Directly uploads to Supabase Storage bucket: <strong>driver-documents</strong> (Max 15MB)
+                </div>
+                <div id="fileSelectedBadge" style="display: none; margin-top: 0.75rem; background: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46; padding: 0.35rem 0.85rem; border-radius: 9999px; font-weight: 700; font-size: 0.82rem;">
+                  <i class="fa-solid fa-file-circle-check"></i> <span id="fileSelectedName">No file selected</span>
+                </div>
+              </div>
+              <input type="file" id="adminDocFileInput" name="file" required accept=".pdf,image/png,image/jpeg,image/webp,image/jpg" style="display: none;" onchange="handleFileSelection(event)" />
             </div>
 
             <div class="form-field">

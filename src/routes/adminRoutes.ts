@@ -7,6 +7,8 @@ import {
   addDriverFamily,
 } from '../controllers/adminController';
 
+import { upload } from '../config/multer';
+
 const router = Router();
 
 // Admin Authentication
@@ -16,8 +18,8 @@ router.post('/login', adminLogin);
 router.post('/create-driver', createDriver);
 router.get('/drivers', getDrivers);
 
-// Driver Vault Document Linkage
-router.post('/upload-doc', uploadDocument);
+// Driver Vault Document Linkage & Supabase Storage File Upload
+router.post('/upload-doc', upload.single('file'), uploadDocument);
 
 // Family Management
 router.post('/driver-family', addDriverFamily);

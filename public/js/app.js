@@ -813,10 +813,25 @@ function copyCredentials() {
   });
 }
 
-// Upload Document Modal
+// Upload Document Modal & File Handling
+function handleFileSelection(event) {
+  const file = event.target.files ? event.target.files[0] : null;
+  const badge = document.getElementById('fileSelectedBadge');
+  const nameEl = document.getElementById('fileSelectedName');
+  if (file && badge && nameEl) {
+    nameEl.textContent = `${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MB)`;
+    badge.style.display = 'inline-block';
+  } else if (badge) {
+    badge.style.display = 'none';
+  }
+}
+
 function openAdminUploadDocModal() {
   document.getElementById('adminDocNumber').value = '';
-  document.getElementById('adminDocFileUrl').value = '';
+  const fileInput = document.getElementById('adminDocFileInput');
+  if (fileInput) fileInput.value = '';
+  const badge = document.getElementById('fileSelectedBadge');
+  if (badge) badge.style.display = 'none';
   document.getElementById('adminDocIssueDate').value = '';
   document.getElementById('adminDocExpiryDate').value = '';
   openModal('adminUploadDocModal');
@@ -830,32 +845,44 @@ function openAdminUploadDocForSpecific(driverId) {
 async function handleAdminUploadDoc(event) {
   event.preventDefault();
 
-  const payload = {
-    driver_id: document.getElementById('adminDocDriverSelect').value,
-    doc_type: document.getElementById('adminDocType').value,
-    doc_number: document.getElementById('adminDocNumber').value || null,
-    file_url: document.getElementById('adminDocFileUrl').value,
-    issue_date: document.getElementById('adminDocIssueDate').value || null,
-    expiry_date: document.getElementById('adminDocExpiryDate').value,
-  };
+  const driverId = document.getElementById('adminDocDriverSelect').value;
+  const docType = document.getElementById('adminDocType').value;
+  const docNumber = document.getElementById('adminDocNumber').value || '';
+  const fileInput = document.getElementById('adminDocFileInput');
+  const issueDate = document.getElementById('adminDocIssueDate').value || '';
+  const expiryDate = document.getElementById('adminDocExpiryDate').value || '';
+
+  if (!fileInput.files || fileInput.files.length === 0) {
+    showToast('Please select a document file (PDF, PNG, JPG) to upload.', 'error');
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('driver_id', driverId);
+  formData.append('doc_type', docType);
+  if (docNumber) formData.append('doc_number', docNumber);
+  formData.append('file', fileInput.files[0]);
+  if (issueDate) formData.append('issue_date', issueDate);
+  if (expiryDate) formData.append('expiry_date', expiryDate);
 
   try {
+    showToast('Uploading document to Supabase Storage...', 'info');
     const res = await fetch(`${API_BASE}/admin/upload-doc`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: formData,
     });
 
     const result = await res.json();
-    if (!res.ok || !result.success) throw new Error(result.error || 'Failed to map document to vault');
+    if (!res.ok || !result.success) throw new Error(result.error || 'Failed to upload document to Supabase vault');
 
     closeModal('adminUploadDocModal');
-    showToast('Document mapped to driver vault successfully!', 'success');
+    showToast('Document successfully uploaded to Supabase & saved to vault!', 'success');
     await loadAdminDashboardData();
   } catch (err) {
     showToast(err.message, 'error');
   }
 }
+
 
 // =============================================================================
 // MODAL CONTROLS & UTILITIES
@@ -873,6 +900,34 @@ function closeModal(id) {
 window.addEventListener('click', (e) => {
   if (e.target.classList.contains('modal-overlay')) {
     e.target.classList.remove('active');
+  }
+});
+
+window.addEventListener('DOMContentLoaded', () => {
+  const dropzone = document.querySelector('.file-upload-dropzone');
+  const fileInput = document.getElementById('adminDocFileInput');
+  if (dropzone && fileInput) {
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.add('dragover');
+      });
+    });
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.remove('dragover');
+      });
+    });
+    dropzone.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      if (dt && dt.files && dt.files.length) {
+        fileInput.files = dt.files;
+        handleFileSelection({ target: fileInput });
+      }
+    });
   }
 });
 

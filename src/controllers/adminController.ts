@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import path from 'path';
 import { supabase } from '../config/supabase';
 import { generateTemporaryPassword, generateUniqueUsername, hashPassword } from '../utils/password';
 import { ApiResponse, Driver, DriverDocument } from '../types/database.types';
@@ -196,15 +197,47 @@ export async function uploadDocument(req: Request, res: Response<ApiResponse>): 
       driver_id,
       doc_type,
       doc_number,
-      file_url,
       issue_date,
       expiry_date,
     } = req.body;
 
-    if (!driver_id || !doc_type || !file_url) {
+    let targetFileUrl = req.body.file_url ? String(req.body.file_url).trim() : '';
+
+    // Handle physical file upload to Supabase Storage bucket 'driver-documents'
+    if (req.file) {
+      const file = req.file;
+      const fileExt = path.extname(file.originalname) || '.pdf';
+      const cleanType = String(doc_type || 'document').toLowerCase().replace(/[^a-z0-9]/g, '_');
+      const storagePath = `${driver_id}/${cleanType}_${Date.now()}${fileExt}`;
+
+      // Upload buffer to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('driver-documents')
+        .upload(storagePath, file.buffer, {
+          contentType: file.mimetype,
+          upsert: true,
+        });
+
+      if (uploadError) {
+        res.status(500).json({
+          success: false,
+          error: `Supabase Storage upload failed: ${uploadError.message}`,
+        });
+        return;
+      }
+
+      // Generate public URL
+      const { data: urlData } = supabase.storage
+        .from('driver-documents')
+        .getPublicUrl(storagePath);
+
+      targetFileUrl = urlData.publicUrl;
+    }
+
+    if (!driver_id || !doc_type || !targetFileUrl) {
       res.status(400).json({
         success: false,
-        error: 'driver_id, doc_type, and file_url are mandatory fields.',
+        error: 'driver_id, doc_type, and an uploaded file or file_url are mandatory.',
       });
       return;
     }
@@ -229,9 +262,9 @@ export async function uploadDocument(req: Request, res: Response<ApiResponse>): 
       .from('driver_documents')
       .insert({
         driver_id,
-        doc_type: doc_type.trim(),
+        doc_type: String(doc_type).trim(),
         doc_number: doc_number ? String(doc_number).trim() : null,
-        file_url: file_url.trim(),
+        file_url: targetFileUrl,
         issue_date: issue_date || null,
         expiry_date: expiry_date || null,
       })
@@ -248,7 +281,7 @@ export async function uploadDocument(req: Request, res: Response<ApiResponse>): 
 
     res.status(201).json({
       success: true,
-      message: `${doc_type} linked to driver vault successfully.`,
+      message: `${doc_type} uploaded to Supabase bucket and linked to vault successfully.`,
       data: document,
     });
   } catch (err: any) {
