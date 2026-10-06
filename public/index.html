@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aaride — Enterprise Vehicle & Driver Vault | Financial Ledger</title>
+  <meta name="description" content="Aaride is an enterprise portal for vehicle and driver document vaults, daily financial ledgers, and family welfare management.">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons for clean visuals -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <!-- App Container -->
+  <div class="app-layout">
+    
+    <!-- Top Navbar -->
+    <header class="navbar">
+      <div class="nav-brand">
+        <div class="brand-logo">
+          <i class="fa-solid fa-car-side"></i>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">Aa<span>ride</span></span>
+          <span class="brand-badge">Enterprise Portal</span>
+        </div>
+      </div>
+
+      <!-- Navigation Switcher -->
+      <nav class="portal-nav">
+        <button id="navAdminBtn" class="nav-tab active" onclick="switchPortal('admin')">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span>Admin Portal</span>
+        </button>
+        <button id="navDriverBtn" class="nav-tab" onclick="switchPortal('driver')">
+          <i class="fa-solid fa-id-card-clip"></i>
+          <span>Driver Vault & Ledger</span>
+        </button>
+      </nav>
+
+      <!-- Right Header Actions -->
+      <div class="nav-status">
+        <div class="status-indicator" id="apiStatusBadge">
+          <span class="pulse-dot"></span>
+          <span id="apiStatusText">Checking API...</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      
+      <!-- ============================================== -->
+      <!-- 1. ADMIN PORTAL VIEW -->
+      <!-- ============================================== -->
+      <section id="adminPortalView" class="portal-section active">
+        <!-- Dashboard Header -->
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">Fleet & Driver Administration</h1>
+            <p class="section-subtitle">Manage driver profiles, document vault compliance, and family welfare.</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn btn-secondary" onclick="openUploadDocModal()">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <span>Upload Document</span>
+            </button>
+            <button class="btn btn-primary" onclick="openCreateDriverModal()">
+              <i class="fa-solid fa-user-plus"></i>
+              <span>Onboard Driver</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Metric KPI Cards -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-icon icon-blue">
+              <i class="fa-solid fa-users"></i>
+            </div>
+            <div class="kpi-data">
+              <span class="kpi-label">Total Registered Drivers</span>
+              <h3 class="kpi-value" id="kpiTotalDrivers">0</h3>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon icon-emerald">
+              <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div class="kpi-data">
+              <span class="kpi-label">Active Drivers</span>
+              <h3 class="kpi-value" id="kpiActiveDrivers">0</h3>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon icon-purple">
+              <i class="fa-solid fa-folder-closed"></i>
+            </div>
+            <div class="kpi-data">
+              <span class="kpi-label">Documents Vaulted</span>
+              <h3 class="kpi-value" id="kpiTotalDocs">0</h3>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon icon-amber">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div class="kpi-data">
+              <span class="kpi-label">Expiring / Expired Docs</span>
+              <h3 class="kpi-value" id="kpiAlertDocs">0</h3>
+            </div>
+          </div>
+        </div>
+
+        <!-- Drivers Directory Table -->
+        <div class="card data-card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <h2 class="card-title">Driver Master Directory</h2>
+              <span class="counter-badge" id="driverTableCount">0 drivers</span>
+            </div>
+            <div class="card-tools">
+              <div class="search-input-wrap">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="driverSearchInput" placeholder="Search by name, phone, vehicle..." oninput="filterDriversTable()">
+              </div>
+              <button class="btn btn-icon" title="Refresh list" onclick="loadAdminDrivers()">
+                <i class="fa-solid fa-rotate"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table" id="driversTable">
+              <thead>
+                <tr>
+                  <th>Driver Name</th>
+                  <th>Phone / Email</th>
+                  <th>Vehicle Number</th>
+                  <th>Vehicle Model</th>
+                  <th>License Number</th>
+                  <th>Vault Docs</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="driversTableBody">
+                <tr>
+                  <td colspan="8" class="table-loading">
+                    <i class="fa-solid fa-spinner fa-spin"></i> Loading registered drivers from Supabase...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- 2. DRIVER PORTAL VIEW -->
+      <!-- ============================================== -->
+      <section id="driverPortalView" class="portal-section">
+        <!-- Driver Profile Header -->
+        <div class="driver-header-banner">
+          <div class="driver-info-main">
+            <div class="driver-avatar">
+              <i class="fa-solid fa-user-tie"></i>
+            </div>
+            <div class="driver-details">
+              <div class="driver-title-row">
+                <h1 class="driver-name" id="portalDriverName">Select a Driver</h1>
+                <span class="status-pill active" id="portalDriverStatus">ACTIVE</span>
+              </div>
+              <div class="driver-sub-badges">
+                <span class="badge"><i class="fa-solid fa-taxi"></i> <span id="portalDriverVehicle">-</span></span>
+                <span class="badge"><i class="fa-solid fa-car"></i> <span id="portalDriverModel">-</span></span>
+                <span class="badge"><i class="fa-solid fa-id-card"></i> <span id="portalDriverLicense">-</span></span>
+                <span class="badge"><i class="fa-solid fa-phone"></i> <span id="portalDriverPhone">-</span></span>
+              </div>
+            </div>
+          </div>
+          <div class="driver-switcher-action">
+            <label for="driverSelectDropdown">Switch Driver Profile:</label>
+            <select id="driverSelectDropdown" class="form-select" onchange="onDriverSelected(this.value)">
+              <option value="">-- Choose a Driver --</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Driver Inner Sub-Navigation -->
+        <div class="driver-sub-tabs">
+          <button class="sub-tab active" onclick="switchDriverSubTab('vault')">
+            <i class="fa-solid fa-vault"></i> Document Vault & Compliance
+          </button>
+          <button class="sub-tab" onclick="switchDriverSubTab('ledger')">
+            <i class="fa-solid fa-book-bookmark"></i> Daily Financial Ledger
+          </button>
+          <button class="sub-tab" onclick="switchDriverSubTab('family')">
+            <i class="fa-solid fa-people-roof"></i> Family & Welfare
+          </button>
+        </div>
+
+        <!-- SUBTAB 1: DOCUMENT VAULT -->
+        <div id="subTabVault" class="subtab-content active">
+          <div class="subtab-header">
+            <div>
+              <h2 class="subtab-title">Verified Document Vault</h2>
+              <p class="subtab-desc">Enterprise document storage with automated expiry tracking for traffic compliance.</p>
+            </div>
+            <button class="btn btn-secondary" onclick="openUploadDocForCurrentDriver()">
+              <i class="fa-solid fa-plus"></i> Add Document
+            </button>
+          </div>
+
+          <!-- Document Cards Grid -->
+          <div class="vault-grid" id="driverVaultGrid">
+            <div class="empty-state">
+              <i class="fa-solid fa-folder-open"></i>
+              <h3>No documents loaded yet</h3>
+              <p>Please select a driver from the dropdown above or upload a document.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUBTAB 2: DAILY FINANCIAL LEDGER -->
+        <div id="subTabLedger" class="subtab-content">
+          <div class="subtab-header">
+            <div>
+              <h2 class="subtab-title">Daily Financial Book</h2>
+              <p class="subtab-desc">Track daily fares, fuel, maintenance, and compute real net profit.</p>
+            </div>
+            <button class="btn btn-primary" onclick="openAddLedgerModal()">
+              <i class="fa-solid fa-plus"></i> Add Daily Entry
+            </button>
+          </div>
+
+          <!-- Financial Summary Cards -->
+          <div class="ledger-metrics-grid">
+            <div class="metric-card income-metric">
+              <div class="metric-top">
+                <span class="metric-title">Total Income</span>
+                <i class="fa-solid fa-arrow-trend-up"></i>
+              </div>
+              <h3 class="metric-amount" id="ledgerTotalIncome">₹0.00</h3>
+              <span class="metric-sub">Total gross fares logged</span>
+            </div>
+
+            <div class="metric-card expense-metric">
+              <div class="metric-top">
+                <span class="metric-title">Total Expense</span>
+                <i class="fa-solid fa-arrow-trend-down"></i>
+              </div>
+              <h3 class="metric-amount" id="ledgerTotalExpense">₹0.00</h3>
+              <span class="metric-sub">Fuel, maintenance, & food</span>
+            </div>
+
+            <div class="metric-card profit-metric">
+              <div class="metric-top">
+                <span class="metric-title">Net Profit</span>
+                <i class="fa-solid fa-wallet"></i>
+              </div>
+              <h3 class="metric-amount" id="ledgerNetProfit">₹0.00</h3>
+              <span class="metric-sub" id="ledgerProfitMargin">Calculated net earnings</span>
+            </div>
+
+            <div class="metric-card days-metric">
+              <div class="metric-top">
+                <span class="metric-title">Days Logged</span>
+                <i class="fa-regular fa-calendar-days"></i>
+              </div>
+              <h3 class="metric-amount" id="ledgerDaysLogged">0</h3>
+              <span class="metric-sub">Daily shift records</span>
+            </div>
+          </div>
+
+          <!-- Ledger Table -->
+          <div class="card data-card mt-4">
+            <div class="card-header">
+              <h3 class="card-title">Historical Daily Entries</h3>
+              <div class="card-tools">
+                <button class="btn btn-icon" title="Refresh entries" onclick="loadDriverLedgerData()">
+                  <i class="fa-solid fa-rotate"></i>
+                </button>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Income (₹)</th>
+                    <th>Expense (₹)</th>
+                    <th>Net Profit (₹)</th>
+                    <th>Notes & Trip Reminders</th>
+                  </tr>
+                </thead>
+                <tbody id="ledgerTableBody">
+                  <tr>
+                    <td colspan="5" class="table-loading">No entries found.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUBTAB 3: FAMILY & WELFARE -->
+        <div id="subTabFamily" class="subtab-content">
+          <div class="subtab-header">
+            <div>
+              <h2 class="subtab-title">Driver Family & Welfare Protection</h2>
+              <p class="subtab-desc">Family members registered for corporate welfare benefits and insurance schemes.</p>
+            </div>
+            <button class="btn btn-secondary" onclick="openAddFamilyForCurrentDriver()">
+              <i class="fa-solid fa-user-plus"></i> Add Family Member
+            </button>
+          </div>
+
+          <div class="family-grid" id="driverFamilyGrid">
+            <div class="empty-state">
+              <i class="fa-solid fa-people-roof"></i>
+              <h3>No family details logged</h3>
+              <p>Add spouse, children, or dependent parents for welfare coverage.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODALS -->
+  <!-- ============================================== -->
+
+  <!-- 1. Onboard Driver Modal -->
+  <div class="modal-backdrop" id="createDriverModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <i class="fa-solid fa-user-plus text-primary"></i>
+          <h3 class="modal-title">Onboard New Driver</h3>
+        </div>
+        <button class="modal-close" onclick="closeModal('createDriverModal')">&times;</button>
+      </div>
+      <form id="createDriverForm" onsubmit="handleCreateDriver(event)">
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="form-group col-12">
+              <label for="newFullName">Full Name *</label>
+              <input type="text" id="newFullName" required class="form-input" placeholder="e.g. Murugan Selvam">
+            </div>
+            <div class="form-group col-6">
+              <label for="newPhone">Phone Number *</label>
+              <input type="tel" id="newPhone" required class="form-input" placeholder="e.g. 9876543210">
+            </div>
+            <div class="form-group col-6">
+              <label for="newEmail">Email (Optional)</label>
+              <input type="email" id="newEmail" class="form-input" placeholder="e.g. murugan@gmail.com">
+            </div>
+            <div class="form-group col-6">
+              <label for="newVehicleNumber">Vehicle Number *</label>
+              <input type="text" id="newVehicleNumber" required class="form-input" placeholder="e.g. TN 28 AB 3456" style="text-transform: uppercase;">
+            </div>
+            <div class="form-group col-6">
+              <label for="newVehicleModel">Vehicle Model *</label>
+              <input type="text" id="newVehicleModel" required class="form-input" placeholder="e.g. Bajaj RE Auto / Swift">
+            </div>
+            <div class="form-group col-12">
+              <label for="newLicenseNumber">Driving License Number *</label>
+              <input type="text" id="newLicenseNumber" required class="form-input" placeholder="e.g. TN2820150001234" style="text-transform: uppercase;">
+            </div>
+            <div class="form-group col-12">
+              <label for="newCustomPassword">Custom Password (Optional, leave blank to auto-generate)</label>
+              <input type="text" id="newCustomPassword" class="form-input" placeholder="Leave empty for auto-generated temporary password">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('createDriverModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btnSubmitDriver">
+            <i class="fa-solid fa-check"></i> Register Driver
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. Driver Created Confirmation & Credentials Modal -->
+  <div class="modal-backdrop" id="driverCredentialsModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <i class="fa-solid fa-circle-check text-emerald"></i>
+          <h3 class="modal-title">Driver Onboarded Successfully</h3>
+        </div>
+        <button class="modal-close" onclick="closeModal('driverCredentialsModal')">&times;</button>
+      </div>
+      <div class="modal-body text-center">
+        <p class="credential-desc">Please share these initial login credentials with the driver:</p>
+        <div class="credentials-card">
+          <div class="cred-row">
+            <span class="cred-label">Driver Name:</span>
+            <strong id="credName">-</strong>
+          </div>
+          <div class="cred-row">
+            <span class="cred-label">Login Phone:</span>
+            <strong id="credPhone">-</strong>
+          </div>
+          <div class="cred-row">
+            <span class="cred-label">Temporary Password:</span>
+            <span class="cred-password" id="credPassword">-</span>
+          </div>
+        </div>
+        <button class="btn btn-secondary mt-3" onclick="copyCredentials()">
+          <i class="fa-regular fa-copy"></i> Copy Credentials
+        </button>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" onclick="closeModal('driverCredentialsModal')">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Upload & Link Document Modal -->
+  <div class="modal-backdrop" id="uploadDocModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <i class="fa-solid fa-cloud-arrow-up text-primary"></i>
+          <h3 class="modal-title">Link Document to Driver Vault</h3>
+        </div>
+        <button class="modal-close" onclick="closeModal('uploadDocModal')">&times;</button>
+      </div>
+      <form id="uploadDocForm" onsubmit="handleUploadDoc(event)">
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="form-group col-12">
+              <label for="docTargetDriver">Select Driver *</label>
+              <select id="docTargetDriver" required class="form-select">
+                <option value="">-- Choose Driver --</option>
+              </select>
+            </div>
+            <div class="form-group col-6">
+              <label for="docType">Document Type *</label>
+              <select id="docType" required class="form-select">
+                <option value="Driving License">Driving License</option>
+                <option value="RC Book">RC Book (Registration Certificate)</option>
+                <option value="Vehicle Insurance">Vehicle Insurance</option>
+                <option value="Fitness Certificate (FC)">Fitness Certificate (FC)</option>
+                <option value="Pollution Certificate (PUC)">Pollution Certificate (PUC)</option>
+                <option value="PAN Card">PAN Card</option>
+                <option value="Aadhaar Card">Aadhaar Card</option>
+              </select>
+            </div>
+            <div class="form-group col-6">
+              <label for="docNumber">Document / Policy Number</label>
+              <input type="text" id="docNumber" class="form-input" placeholder="e.g. POL-99887711">
+            </div>
+            <div class="form-group col-12">
+              <label for="docFileUrl">Supabase Storage File URL or Document Link *</label>
+              <input type="url" id="docFileUrl" required class="form-input" placeholder="https://prbjpbsqzpxjdftjujjq.supabase.co/storage/v1/object/public/vault/doc.pdf">
+              <small class="form-hint">Paste the Supabase Storage public/signed URL or external document link.</small>
+            </div>
+            <div class="form-group col-6">
+              <label for="docIssueDate">Issue Date</label>
+              <input type="date" id="docIssueDate" class="form-input">
+            </div>
+            <div class="form-group col-6">
+              <label for="docExpiryDate">Expiry Date (Crucial for Alerts) *</label>
+              <input type="date" id="docExpiryDate" class="form-input">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('uploadDocModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fa-solid fa-floppy-disk"></i> Save Document
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. Add Daily Ledger Entry Modal -->
+  <div class="modal-backdrop" id="addLedgerModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <i class="fa-solid fa-coins text-amber"></i>
+          <h3 class="modal-title">Record Daily Shift Ledger</h3>
+        </div>
+        <button class="modal-close" onclick="closeModal('addLedgerModal')">&times;</button>
+      </div>
+      <form id="addLedgerForm" onsubmit="handleAddLedger(event)">
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="form-group col-12">
+              <label for="ledgerEntryDate">Shift Date *</label>
+              <input type="date" id="ledgerEntryDate" required class="form-input">
+            </div>
+            <div class="form-group col-6">
+              <label for="ledgerIncome">Total Daily Income / Fares (₹) *</label>
+              <input type="number" step="0.01" min="0" id="ledgerIncome" required class="form-input" placeholder="e.g. 1850" oninput="calculateModalProfitPreview()">
+            </div>
+            <div class="form-group col-6">
+              <label for="ledgerExpense">Daily Expenses (Fuel / Food / Repairs) (₹) *</label>
+              <input type="number" step="0.01" min="0" id="ledgerExpense" required class="form-input" placeholder="e.g. 450" oninput="calculateModalProfitPreview()">
+            </div>
+            <div class="form-group col-12">
+              <div class="profit-preview-card">
+                <span>Calculated Net Daily Profit:</span>
+                <strong id="modalProfitPreview" class="text-emerald">₹0.00</strong>
+              </div>
+            </div>
+            <div class="form-group col-12">
+              <label for="ledgerNotes">Trip Notes / Reminders</label>
+              <textarea id="ledgerNotes" class="form-textarea" rows="2" placeholder="e.g. CNG Fuel: ₹350, Breakfast: ₹100, Passenger tip: ₹50"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('addLedgerModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fa-solid fa-check"></i> Post to Ledger
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 5. Add Family Welfare Modal -->
+  <div class="modal-backdrop" id="addFamilyModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <i class="fa-solid fa-people-roof text-primary"></i>
+          <h3 class="modal-title">Register Family Member</h3>
+        </div>
+        <button class="modal-close" onclick="closeModal('addFamilyModal')">&times;</button>
+      </div>
+      <form id="addFamilyForm" onsubmit="handleAddFamily(event)">
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="form-group col-12">
+              <label for="familyTargetDriver">Select Driver *</label>
+              <select id="familyTargetDriver" required class="form-select">
+                <option value="">-- Choose Driver --</option>
+              </select>
+            </div>
+            <div class="form-group col-6">
+              <label for="familyMemberName">Member Full Name *</label>
+              <input type="text" id="familyMemberName" required class="form-input" placeholder="e.g. Lakshmi M">
+            </div>
+            <div class="form-group col-6">
+              <label for="familyRelation">Relationship *</label>
+              <select id="familyRelation" required class="form-select">
+                <option value="Wife">Wife</option>
+                <option value="Husband">Husband</option>
+                <option value="Son">Son</option>
+                <option value="Daughter">Daughter</option>
+                <option value="Mother">Mother</option>
+                <option value="Father">Father</option>
+              </select>
+            </div>
+            <div class="form-group col-12">
+              <label for="familyDob">Date of Birth</label>
+              <input type="date" id="familyDob" class="form-input">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('addFamilyModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fa-solid fa-check"></i> Save Member
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Application JS Logic -->
+  <script src="/js/app.js"></script>
+</body>
+</html>
