@@ -1,26 +1,32 @@
 /**
- * AARIDE HIGH-SAAS OPERATING SYSTEM - CLIENT ENGINE
- * Handles Live Telemetry, Vault Compliance, Ledger Calculations, and Auth
+ * AARIDE ENTERPRISE OPERATING SYSTEM
+ * Complete Client Engine for:
+ * 1. Landing Page -> Login Page -> Role-Based Dashboard Routing
+ * 2. Driver Dashboard (View verified files, Edit metadata only, Shift Ledger)
+ * 3. Admin Dashboard (Fleet Management, Unique Username/Password Generation)
  */
 
 const state = {
-  drivers: [],
-  selectedDriverId: null,
-  selectedDriver: null,
+  currentUser: null,       // { id, role: 'admin' | 'driver', full_name, username, ... }
+  drivers: [],             // Admin fleet list
+  currentDriverVault: [],  // Logged-in driver's documents
+  currentDriverLedger: [], // Logged-in driver's ledger records
 };
 
 const API_BASE = '/api';
 
-// Initialize when DOM ready
+// =============================================================================
+// INITIALIZATION
+// =============================================================================
 document.addEventListener('DOMContentLoaded', () => {
   checkApiHealth();
-  loadAdminFleetData();
+  initRouter();
+  loadLandingKpis();
 
-  const todayStr = new Date().toISOString().split('T')[0];
-  const dateInput = document.getElementById('ledgerEntryDate');
-  if (dateInput) {
-    dateInput.value = todayStr;
-  }
+  // Set today's date on date inputs
+  const today = new Date().toISOString().split('T')[0];
+  const shiftInput = document.getElementById('driverShiftDate');
+  if (shiftInput) shiftInput.value = today;
 });
 
 // =============================================================================
@@ -52,56 +58,255 @@ async function checkApiHealth() {
   }
 }
 
-// =============================================================================
-// WINDOW VIEW SWITCHER (ADMIN vs DRIVER)
-// =============================================================================
-function switchWindowView(view) {
-  const adminWrapper = document.getElementById('adminViewWrapper');
-  const driverWrapper = document.getElementById('driverViewWrapper');
-  const btnTabAdmin = document.getElementById('btnTabAdmin');
-  const btnTabDriver = document.getElementById('btnTabDriver');
-  const navLinkAdmin = document.getElementById('navLinkAdmin');
-  const navLinkDriver = document.getElementById('navLinkDriver');
+async function loadLandingKpis() {
+  try {
+    const res = await fetch(`${API_BASE}/admin/drivers`);
+    const result = await res.json();
+    if (result.success && result.data) {
+      state.drivers = result.data;
+      const count = result.data.length;
+      let totalDocs = 0;
+      result.data.forEach((d) => totalDocs += (d.driver_documents?.length || 0));
 
-  if (view === 'admin') {
-    adminWrapper.style.display = 'block';
-    driverWrapper.classList.remove('active');
-
-    btnTabAdmin.classList.add('active');
-    btnTabDriver.classList.remove('active');
-
-    if (navLinkAdmin) navLinkAdmin.classList.add('active');
-    if (navLinkDriver) navLinkDriver.classList.remove('active');
-  } else {
-    adminWrapper.style.display = 'none';
-    driverWrapper.classList.add('active');
-
-    btnTabAdmin.classList.remove('active');
-    btnTabDriver.classList.add('active');
-
-    if (navLinkAdmin) navLinkAdmin.classList.remove('active');
-    if (navLinkDriver) navLinkDriver.classList.add('active');
-
-    if (!state.selectedDriverId && state.drivers.length > 0) {
-      onDriverSelected(state.drivers[0].id);
+      const driversEl = document.getElementById('landingKpiDrivers');
+      const docsEl = document.getElementById('landingKpiDocs');
+      if (driversEl && count > 0) driversEl.textContent = count;
+      if (docsEl && totalDocs > 0) docsEl.textContent = totalDocs.toLocaleString('en-IN');
     }
-  }
-
-  // Smooth scroll to command center
-  const commandCenter = document.getElementById('commandCenter');
-  if (commandCenter) {
-    const yOffset = -80;
-    const y = commandCenter.getBoundingClientRect().top + window.pageYOffset + yOffset;
-    window.scrollTo({ top: y, behavior: 'smooth' });
+  } catch (err) {
+    // Non-blocking for landing preview
   }
 }
 
-function switchDriverSubTab(tab) {
+// =============================================================================
+// CLIENT ROUTER (LANDING -> LOGIN -> DRIVER DASHBOARD / ADMIN DASHBOARD)
+// =============================================================================
+function initRouter() {
+  // Check persisted session
+  const savedSession = localStorage.getItem('aaride_session');
+  if (savedSession) {
+    try {
+      state.currentUser = JSON.parse(savedSession);
+      updateNavbarSession(state.currentUser);
+
+      // Route based on role
+      if (state.currentUser.role === 'admin') {
+        navigateTo('admin', false);
+        return;
+      } else if (state.currentUser.role === 'driver') {
+        navigateTo('driver', false);
+        return;
+      }
+    } catch (e) {
+      localStorage.removeItem('aaride_session');
+    }
+  }
+
+  // Handle hash changes
+  window.addEventListener('hashchange', handleHashRouting);
+  handleHashRouting();
+}
+
+function handleHashRouting() {
+  const hash = window.location.hash.replace('#/', '').replace('#', '');
+  if (hash === 'login') {
+    navigateTo('login', false);
+  } else if (hash === 'admin') {
+    if (state.currentUser?.role === 'admin') {
+      navigateTo('admin', false);
+    } else {
+      navigateTo('login', false);
+    }
+  } else if (hash === 'driver') {
+    if (state.currentUser?.role === 'driver') {
+      navigateTo('driver', false);
+    } else {
+      navigateTo('login', false);
+    }
+  } else {
+    navigateTo('landing', false);
+  }
+}
+
+function navigateTo(viewName, updateHash = true) {
+  const views = ['landing', 'login', 'driver', 'admin'];
+
+  views.forEach((v) => {
+    const el = document.getElementById(`view${v.charAt(0).toUpperCase() + v.slice(1)}` + (v === 'driver' || v === 'admin' ? 'Dashboard' : ''));
+    if (el) el.classList.remove('active');
+  });
+
+  let targetId = '';
+  if (viewName === 'landing') targetId = 'viewLanding';
+  else if (viewName === 'login') targetId = 'viewLogin';
+  else if (viewName === 'driver') targetId = 'viewDriverDashboard';
+  else if (viewName === 'admin') targetId = 'viewAdminDashboard';
+
+  const targetEl = document.getElementById(targetId);
+  if (targetEl) targetEl.classList.add('active');
+
+  if (updateHash) {
+    window.location.hash = `#/${viewName}`;
+  }
+
+  window.scrollTo({ top: 0, behavior: 'instant' });
+
+  // Trigger data fetch for dashboard views
+  if (viewName === 'admin') {
+    loadAdminDashboardData();
+  } else if (viewName === 'driver') {
+    renderDriverProfileInfo();
+    loadDriverPersonalVault();
+    loadDriverPersonalLedger();
+    loadDriverPersonalFamily();
+  }
+}
+
+function navigateToUserDashboard() {
+  if (state.currentUser?.role === 'admin') {
+    navigateTo('admin');
+  } else if (state.currentUser?.role === 'driver') {
+    navigateTo('driver');
+  } else {
+    navigateTo('login');
+  }
+}
+
+function updateNavbarSession(user) {
+  const navGuest = document.getElementById('navGuestActions');
+  const navUser = document.getElementById('navUserActions');
+  const navPublic = document.getElementById('navPublic');
+  const navAuth = document.getElementById('navAuthenticated');
+
+  if (user) {
+    if (navGuest) navGuest.style.display = 'none';
+    if (navUser) navUser.style.display = 'flex';
+    if (navPublic) navPublic.style.display = 'none';
+    if (navAuth) navAuth.style.display = 'flex';
+
+    const nameEl = document.getElementById('navUserName');
+    const roleEl = document.getElementById('navUserRole');
+    if (nameEl) nameEl.textContent = user.full_name || user.username || 'User';
+    if (roleEl) roleEl.textContent = user.role === 'admin' ? 'ADMIN' : 'DRIVER';
+  } else {
+    if (navGuest) navGuest.style.display = 'flex';
+    if (navUser) navUser.style.display = 'none';
+    if (navPublic) navPublic.style.display = 'flex';
+    if (navAuth) navAuth.style.display = 'none';
+  }
+}
+
+function handleSignOut() {
+  localStorage.removeItem('aaride_session');
+  state.currentUser = null;
+  updateNavbarSession(null);
+  showToast('You have signed out.', 'success');
+  navigateTo('landing');
+}
+
+// =============================================================================
+// UNIVERSAL AUTHENTICATION
+// if (auth == driver) -> Driver Dashboard
+// else if (auth == admin) -> Admin Dashboard
+// else -> Invalid user or not registered user
+// =============================================================================
+async function handleUniversalLogin(event) {
+  event.preventDefault();
+  const btn = document.getElementById('btnLoginSubmit');
+  btn.disabled = true;
+  btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Authenticating...`;
+
+  const identifier = document.getElementById('loginIdentifier').value.trim();
+  const password = document.getElementById('loginPassword').value.trim();
+
+  try {
+    const res = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifier, password }),
+    });
+
+    const result = await res.json();
+
+    if (!res.ok || !result.success || !result.data) {
+      throw new Error(result.error || 'Invalid user or not a registered user.');
+    }
+
+    const { role, user } = result.data;
+    state.currentUser = { ...user, role };
+
+    // Persist session
+    localStorage.setItem('aaride_session', JSON.stringify(state.currentUser));
+    updateNavbarSession(state.currentUser);
+
+    showToast(`Welcome back, ${user.full_name}!`, 'success');
+
+    // Role-based redirect logic
+    if (role === 'driver') {
+      navigateTo('driver');
+    } else if (role === 'admin') {
+      navigateTo('admin');
+    } else {
+      throw new Error('Unrecognized user role.');
+    }
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Sign In';
+  }
+}
+
+function fillDemoCredentials(role) {
+  const identInput = document.getElementById('loginIdentifier');
+  const passInput = document.getElementById('loginPassword');
+
+  if (role === 'admin') {
+    identInput.value = 'admin@aaride.com';
+    passInput.value = 'Admin#2026';
+    showToast('Admin credentials filled. Click Sign In.', 'success');
+  } else if (role === 'driver') {
+    if (state.drivers.length > 0) {
+      const firstDriver = state.drivers[0];
+      identInput.value = firstDriver.username || firstDriver.phone;
+      passInput.value = 'Aa#Demo2026';
+      showToast(`Filled driver: ${firstDriver.full_name}. Enter registered password.`, 'success');
+    } else {
+      identInput.value = 'murugan.selvam';
+      passInput.value = 'Aa#Demo2026';
+      showToast('Enter your registered driver username/phone and password.', 'success');
+    }
+  }
+}
+
+// =============================================================================
+// DRIVER DASHBOARD (VIEW PERSONAL VAULT, EDIT METADATA ONLY, DAILY SHIFT LEDGER)
+// =============================================================================
+function renderDriverProfileInfo() {
+  if (!state.currentUser) return;
+  const user = state.currentUser;
+
+  const nameEl = document.getElementById('driverDashName');
+  const userEl = document.getElementById('driverDashUsername');
+  const vehEl = document.getElementById('driverDashVehicle');
+  const modEl = document.getElementById('driverDashModel');
+  const licEl = document.getElementById('driverDashLicense');
+  const phEl = document.getElementById('driverDashPhone');
+
+  if (nameEl) nameEl.textContent = user.full_name || 'Driver Workspace';
+  if (userEl) userEl.textContent = user.username || user.phone || '-';
+  if (vehEl) vehEl.textContent = user.vehicle_number || 'N/A';
+  if (modEl) modEl.textContent = user.vehicle_model || 'N/A';
+  if (licEl) licEl.textContent = user.license_number || 'N/A';
+  if (phEl) phEl.textContent = user.phone || 'N/A';
+}
+
+function switchDriverDashTab(tab) {
   const tabs = ['vault', 'ledger', 'family'];
   tabs.forEach((t) => {
-    const el = document.getElementById(`driverSubtab${t.charAt(0).toUpperCase() + t.slice(1)}`);
-    const btn = document.getElementById(`subtabBtn${t.charAt(0).toUpperCase() + t.slice(1)}`);
-    if (el) el.style.display = t === tab ? 'block' : 'none';
+    const section = document.getElementById(`driverDashTab${t.charAt(0).toUpperCase() + t.slice(1)}`);
+    const btn = document.getElementById(`tabDriver${t.charAt(0).toUpperCase() + t.slice(1)}Btn`);
+    if (section) section.style.display = t === tab ? 'block' : 'none';
     if (btn) {
       if (t === tab) btn.classList.add('active');
       else btn.classList.remove('active');
@@ -109,228 +314,36 @@ function switchDriverSubTab(tab) {
   });
 }
 
-// =============================================================================
-// ADMIN FLEET & METRICS
-// =============================================================================
-async function loadAdminFleetData() {
-  const tbody = document.getElementById('adminDriversTableBody');
-
-  try {
-    const res = await fetch(`${API_BASE}/admin/drivers`);
-    const result = await res.json();
-
-    if (!result.success || !result.data) {
-      throw new Error(result.error || 'Failed to fetch fleet data');
-    }
-
-    state.drivers = result.data;
-    renderFleetMetrics(state.drivers);
-    renderDriverDropdowns(state.drivers);
-    renderFleetTable(state.drivers);
-
-    const notice = document.getElementById('tableUpdatedNotice');
-    if (notice) notice.textContent = `Updated just now (${state.drivers.length} registered)`;
-  } catch (err) {
-    console.error('Fleet query error:', err);
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="7" style="text-align: center; padding: 2.5rem; color: #DC2626;">
-          <i class="fa-solid fa-circle-exclamation"></i> Error loading fleet telemetry: ${err.message}.<br>
-          <small style="color: #64748B;">Please ensure PostgreSQL tables from schema.sql are initialized.</small>
-        </td>
-      </tr>
-    `;
-  }
-}
-
-function renderFleetMetrics(drivers) {
-  const total = drivers.length;
-  let totalDocs = 0;
-  let alertDocs = 0;
-  const now = new Date();
-
-  drivers.forEach((d) => {
-    const docs = d.driver_documents || [];
-    totalDocs += docs.length;
-    docs.forEach((doc) => {
-      if (doc.expiry_date) {
-        const diff = new Date(doc.expiry_date) - now;
-        const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
-        if (days <= 30) alertDocs++;
-      }
-    });
-  });
-
-  const kpiDrivers = document.getElementById('saasKpiDrivers');
-  const kpiVaultDocs = document.getElementById('saasKpiVaultDocs');
-  const kpiAlertDocs = document.getElementById('saasKpiAlertDocs');
-  const kpiCollections = document.getElementById('saasKpiCollections');
-
-  if (kpiDrivers) kpiDrivers.textContent = total;
-  if (kpiVaultDocs) kpiVaultDocs.textContent = totalDocs.toLocaleString('en-IN');
-  if (kpiAlertDocs) kpiAlertDocs.textContent = alertDocs;
-  if (kpiCollections) {
-    // Dynamic or simulated calculation based on registered fleet
-    const estimatedLedger = total > 0 ? `₹${(total * 4200).toLocaleString('en-IN')}` : '₹0';
-    kpiCollections.textContent = estimatedLedger;
-  }
-}
-
-function renderDriverDropdowns(drivers) {
-  const portalSelect = document.getElementById('driverSelectDropdown');
-  const docTargetSelect = document.getElementById('docTargetDriver');
-  const familyTargetSelect = document.getElementById('familyTargetDriver');
-
-  const options = drivers.map(
-    (d) => `<option value="${d.id}">${d.full_name} (${d.vehicle_number})</option>`
-  ).join('');
-
-  if (portalSelect) {
-    portalSelect.innerHTML = `<option value="">-- Choose Driver --</option>` + options;
-    if (state.selectedDriverId) portalSelect.value = state.selectedDriverId;
-  }
-  if (docTargetSelect) {
-    docTargetSelect.innerHTML = `<option value="">-- Choose Driver --</option>` + options;
-  }
-  if (familyTargetSelect) {
-    familyTargetSelect.innerHTML = `<option value="">-- Choose Driver --</option>` + options;
-  }
-}
-
-function renderFleetTable(drivers) {
-  const tbody = document.getElementById('adminDriversTableBody');
-
-  if (!drivers || drivers.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="7" style="text-align: center; padding: 2.5rem; color: #64748B;">
-          No vehicles allocated yet. Click <strong>"Deploy Free Workspace"</strong> or <strong>"+ Add Driver"</strong> to onboard your first vehicle.
-        </td>
-      </tr>
-    `;
-    return;
-  }
-
-  tbody.innerHTML = drivers.map((d) => {
-    const docsCount = d.driver_documents ? d.driver_documents.length : 0;
-    const statusPill = d.is_active
-      ? `<span class="status-pill-saas allocated"><i class="fa-solid fa-circle-check"></i> Allocated</span>`
-      : `<span class="status-pill-saas pending"><i class="fa-solid fa-clock"></i> Suspended</span>`;
-
-    return `
-      <tr>
-        <td>
-          <div class="driver-cell-name">${escapeHtml(d.full_name)}</div>
-          <div class="driver-cell-sub">${docsCount} compliance doc${docsCount === 1 ? '' : 's'}</div>
-        </td>
-        <td>
-          <div style="font-weight: 600;">${escapeHtml(d.phone)}</div>
-          <div class="driver-cell-sub">${escapeHtml(d.email || 'No email')}</div>
-        </td>
-        <td>
-          <span class="plate-badge">${escapeHtml(d.vehicle_number)}</span>
-        </td>
-        <td>${escapeHtml(d.vehicle_model)}</td>
-        <td><code style="color: #0F766E; font-weight: 700;">${escapeHtml(d.license_number)}</code></td>
-        <td>${statusPill}</td>
-        <td>
-          <div style="display: flex; gap: 0.4rem;">
-            <button class="btn-saas btn-saas-secondary btn-sm" onclick="viewDriverWorkspace('${d.id}')">
-              <i class="fa-solid fa-arrow-up-right-from-square"></i> Open
-            </button>
-            <button class="btn-saas btn-saas-secondary btn-sm" title="Upload Document" onclick="openUploadDocForSpecificDriver('${d.id}')">
-              <i class="fa-solid fa-cloud-arrow-up"></i>
-            </button>
-          </div>
-        </td>
-      </tr>
-    `;
-  }).join('');
-}
-
-function filterDriversTable() {
-  const query = document.getElementById('adminSearchInput').value.toLowerCase().trim();
-  const filtered = state.drivers.filter((d) => {
-    return (
-      d.full_name.toLowerCase().includes(query) ||
-      d.phone.toLowerCase().includes(query) ||
-      d.vehicle_number.toLowerCase().includes(query) ||
-      d.license_number.toLowerCase().includes(query) ||
-      d.vehicle_model.toLowerCase().includes(query)
-    );
-  });
-  renderFleetTable(filtered);
-}
-
-// =============================================================================
-// DRIVER PORTAL LOGIC
-// =============================================================================
-function viewDriverWorkspace(driverId) {
-  switchWindowView('driver');
-  onDriverSelected(driverId);
-}
-
-async function onDriverSelected(driverId) {
-  if (!driverId) return;
-
-  state.selectedDriverId = driverId;
-  const driverSelect = document.getElementById('driverSelectDropdown');
-  if (driverSelect) driverSelect.value = driverId;
-
-  state.selectedDriver = state.drivers.find((d) => d.id === driverId) || null;
-
-  if (state.selectedDriver) {
-    document.getElementById('driverProfileName').textContent = state.selectedDriver.full_name;
-    document.getElementById('driverProfileVehicle').textContent = state.selectedDriver.vehicle_number;
-    document.getElementById('driverProfileModel').textContent = state.selectedDriver.vehicle_model;
-    document.getElementById('driverProfileLicense').textContent = state.selectedDriver.license_number;
-    document.getElementById('driverProfilePhone').textContent = state.selectedDriver.phone;
-
-    const statusPill = document.getElementById('driverProfileStatus');
-    if (state.selectedDriver.is_active) {
-      statusPill.className = 'status-pill-saas allocated';
-      statusPill.textContent = 'ALLOCATED';
-    } else {
-      statusPill.className = 'status-pill-saas pending';
-      statusPill.textContent = 'SUSPENDED';
-    }
-  }
-
-  await Promise.all([
-    loadDriverVaultCards(driverId),
-    loadDriverLedgerData(driverId),
-    loadDriverFamilyData(driverId),
-  ]);
-}
-
-async function loadDriverVaultCards(driverId) {
-  const grid = document.getElementById('driverVaultCardsGrid');
+/**
+ * Driver can ONLY view the docs uploaded by admin for their account
+ */
+async function loadDriverPersonalVault() {
+  if (!state.currentUser) return;
+  const driverId = state.currentUser.id;
+  const grid = document.getElementById('driverPersonalVaultGrid');
 
   try {
     const res = await fetch(`${API_BASE}/driver/vault/${driverId}`);
     const result = await res.json();
 
     if (!result.success || !result.data) {
-      throw new Error(result.error || 'Failed to fetch vault');
+      throw new Error(result.error || 'Failed to fetch personal vault');
     }
 
-    const docs = result.data.documents || [];
+    state.currentDriverVault = result.data.documents || [];
 
-    if (docs.length === 0) {
+    if (state.currentDriverVault.length === 0) {
       grid.innerHTML = `
-        <div style="grid-column: 1 / -1; text-align: center; padding: 3rem 1.5rem; background: #FAFBFD; border: 1px dashed var(--border-light); border-radius: var(--radius-md);">
+        <div style="grid-column: 1 / -1; text-align: center; padding: 3rem 1.5rem; background: #FFFFFF; border: 1px dashed var(--border-light); border-radius: var(--radius-md);">
           <i class="fa-solid fa-folder-open" style="font-size: 2.5rem; color: #94A3B8; margin-bottom: 0.75rem;"></i>
-          <h4 style="font-size: 1.15rem; font-weight: 800; color: #0F172A; margin-bottom: 0.25rem;">No documents uploaded</h4>
-          <p style="font-size: 0.88rem; color: #64748B;">Upload RC Book, Driving License, or Insurance to start expiry telemetry.</p>
-          <button class="btn-saas btn-saas-secondary btn-sm" style="margin-top: 1rem;" onclick="openUploadDocForCurrentDriver()">
-            <i class="fa-solid fa-cloud-arrow-up"></i> Upload Document
-          </button>
+          <h4 style="font-size: 1.15rem; font-weight: 800; color: #0F172A; margin-bottom: 0.25rem;">No compliance documents registered yet</h4>
+          <p style="font-size: 0.88rem; color: #64748B;">Your administrator will upload your verified vehicle RC Book, License, and Insurance.</p>
         </div>
       `;
       return;
     }
 
-    grid.innerHTML = docs.map((doc) => {
+    grid.innerHTML = state.currentDriverVault.map((doc) => {
       let icon = 'fa-file-lines';
       if (doc.doc_type.includes('License')) icon = 'fa-id-card';
       else if (doc.doc_type.includes('RC')) icon = 'fa-car';
@@ -353,16 +366,17 @@ async function loadDriverVaultCards(driverId) {
               </div>
               ${statusBadge}
             </div>
+
             <h4 class="vault-item-title">${escapeHtml(doc.doc_type)}</h4>
-            <div class="vault-item-docnum">Doc No: ${escapeHtml(doc.doc_number || 'N/A')}</div>
+            <div class="vault-item-docnum">Doc No: <strong>${escapeHtml(doc.doc_number || 'N/A')}</strong></div>
 
             <div class="vault-dates-box">
               <div class="vault-date-line">
-                <span>Issue Date:</span>
+                <span>Start Date (Issue):</span>
                 <strong>${doc.issue_date || 'Not recorded'}</strong>
               </div>
               <div class="vault-date-line">
-                <span>Expiry Date:</span>
+                <span>End Date (Expiry):</span>
                 <strong style="color: ${doc.status === 'EXPIRED' ? '#DC2626' : doc.status === 'EXPIRING_SOON' ? '#D97706' : '#0F172A'};">
                   ${doc.expiry_date || 'No Expiry'}
                 </strong>
@@ -370,10 +384,14 @@ async function loadDriverVaultCards(driverId) {
             </div>
           </div>
 
-          <div style="display: flex; justify-content: flex-end; padding-top: 0.75rem; border-top: 1px solid var(--border-subtle);">
-            <a href="${escapeHtml(doc.file_url)}" target="_blank" rel="noopener noreferrer" class="btn-saas btn-saas-secondary btn-sm">
-              <i class="fa-solid fa-arrow-up-right-from-square"></i> View Document
+          <!-- Actions: Open certified file + Edit metadata (dates & numbers) -->
+          <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 0.75rem; border-top: 1px solid var(--border-subtle); gap: 0.5rem;">
+            <a href="${escapeHtml(doc.file_url)}" target="_blank" rel="noopener noreferrer" class="btn-saas btn-saas-secondary btn-sm" title="View certified uploaded document">
+              <i class="fa-solid fa-arrow-up-right-from-square"></i> View File
             </a>
+            <button class="btn-saas btn-saas-primary btn-sm" onclick="openEditDocModal('${doc.id}')">
+              <i class="fa-solid fa-pen-to-square"></i> Edit Dates & No.
+            </button>
           </div>
         </div>
       `;
@@ -383,38 +401,94 @@ async function loadDriverVaultCards(driverId) {
   }
 }
 
-// =============================================================================
-// FINANCIAL LEDGER DATA
-// =============================================================================
-async function loadDriverLedgerData(driverId = state.selectedDriverId) {
-  if (!driverId) return;
+/**
+ * Driver Document Metadata Editor Modal
+ * CAN edit start date, end date, doc number
+ * CANNOT edit or replace the file_url
+ */
+function openEditDocModal(docId) {
+  const doc = state.currentDriverVault.find((d) => d.id === docId);
+  if (!doc) {
+    showToast('Document not found in personal vault.', 'error');
+    return;
+  }
 
-  const tbody = document.getElementById('driverLedgerTableBody');
+  document.getElementById('editDocId').value = doc.id;
+  document.getElementById('editDocType').value = doc.doc_type;
+  document.getElementById('editDocNumber').value = doc.doc_number || '';
+  document.getElementById('editDocIssueDate').value = doc.issue_date || '';
+  document.getElementById('editDocExpiryDate').value = doc.expiry_date || '';
+
+  const preview = document.getElementById('editDocFileUrlPreview');
+  const link = document.getElementById('editDocFileUrlLink');
+  if (preview) preview.textContent = doc.file_url;
+  if (link) link.href = doc.file_url;
+
+  openModal('editDocMetadataModal');
+}
+
+async function handleSaveDocMetadata(event) {
+  event.preventDefault();
+  const docId = document.getElementById('editDocId').value;
+  if (!docId) return;
+
+  const payload = {
+    driver_id: state.currentUser.id,
+    doc_number: document.getElementById('editDocNumber').value,
+    issue_date: document.getElementById('editDocIssueDate').value || null,
+    expiry_date: document.getElementById('editDocExpiryDate').value,
+  };
+
+  try {
+    const res = await fetch(`${API_BASE}/driver/document/${docId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await res.json();
+    if (!res.ok || !result.success) {
+      throw new Error(result.error || 'Failed to update document metadata');
+    }
+
+    closeModal('editDocMetadataModal');
+    showToast('Document dates and reference number updated successfully!', 'success');
+    await loadDriverPersonalVault();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+// Daily Shift Ledger
+async function loadDriverPersonalLedger() {
+  if (!state.currentUser) return;
+  const driverId = state.currentUser.id;
+  const tbody = document.getElementById('driverPersonalLedgerTableBody');
 
   try {
     const res = await fetch(`${API_BASE}/driver/ledger/${driverId}`);
     const result = await res.json();
 
     if (!result.success || !result.data) {
-      throw new Error(result.error || 'Failed to load ledger');
+      throw new Error(result.error || 'Failed to fetch ledger');
     }
 
     const { summary, records } = result.data;
 
-    document.getElementById('ledgerIncomeVal').textContent = `₹${(summary.total_income || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
-    document.getElementById('ledgerExpenseVal').textContent = `₹${(summary.total_expense || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    document.getElementById('driverLedgerIncome').textContent = `₹${(summary.total_income || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    document.getElementById('driverLedgerExpense').textContent = `₹${(summary.total_expense || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
     
-    const profitEl = document.getElementById('ledgerProfitVal');
+    const profitEl = document.getElementById('driverLedgerProfit');
     profitEl.textContent = `₹${(summary.net_profit || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
     profitEl.style.color = summary.net_profit >= 0 ? '#059669' : '#DC2626';
 
-    document.getElementById('ledgerDaysVal').textContent = summary.total_days_logged || 0;
+    document.getElementById('driverLedgerDays').textContent = summary.total_days_logged || 0;
 
     if (!records || records.length === 0) {
       tbody.innerHTML = `
         <tr>
           <td colspan="5" style="text-align: center; padding: 2.5rem; color: #64748B;">
-            No daily shift entries logged yet. Click <strong>"Record Daily Shift"</strong> to post fares and fuel expenses.
+            No daily shift entries logged yet. Click <strong>"Record Shift Entry"</strong> to record today's earnings.
           </td>
         </tr>
       `;
@@ -439,37 +513,34 @@ async function loadDriverLedgerData(driverId = state.selectedDriverId) {
   }
 }
 
-function openAddLedgerModal() {
-  if (!state.selectedDriverId) {
-    showToast('Please select a driver workspace first.', 'error');
-    return;
-  }
-  document.getElementById('ledgerEntryDate').value = new Date().toISOString().split('T')[0];
-  document.getElementById('ledgerIncome').value = '';
-  document.getElementById('ledgerExpense').value = '';
-  document.getElementById('ledgerNotes').value = '';
-  document.getElementById('modalProfitPreview').textContent = '₹0.00';
-  openModal('addLedgerModal');
+function openDriverAddLedgerModal() {
+  document.getElementById('driverShiftDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('driverShiftIncome').value = '';
+  document.getElementById('driverShiftExpense').value = '';
+  document.getElementById('driverShiftNotes').value = '';
+  document.getElementById('driverModalProfitPreview').textContent = '₹0.00';
+  openModal('driverAddLedgerModal');
 }
 
-function calculateModalProfitPreview() {
-  const inc = Number(document.getElementById('ledgerIncome').value) || 0;
-  const exp = Number(document.getElementById('ledgerExpense').value) || 0;
+function calculateDriverModalProfit() {
+  const inc = Number(document.getElementById('driverShiftIncome').value) || 0;
+  const exp = Number(document.getElementById('driverShiftExpense').value) || 0;
   const profit = inc - exp;
-  const el = document.getElementById('modalProfitPreview');
+  const el = document.getElementById('driverModalProfitPreview');
   el.textContent = `₹${profit.toFixed(2)}`;
   el.style.color = profit >= 0 ? '#166534' : '#DC2626';
 }
 
-async function handleAddLedger(event) {
+async function handleDriverAddLedger(event) {
   event.preventDefault();
+  if (!state.currentUser) return;
 
   const payload = {
-    driver_id: state.selectedDriverId,
-    entry_date: document.getElementById('ledgerEntryDate').value,
-    income: Number(document.getElementById('ledgerIncome').value),
-    expense: Number(document.getElementById('ledgerExpense').value),
-    notes: document.getElementById('ledgerNotes').value || null,
+    driver_id: state.currentUser.id,
+    entry_date: document.getElementById('driverShiftDate').value,
+    income: Number(document.getElementById('driverShiftIncome').value),
+    expense: Number(document.getElementById('driverShiftExpense').value),
+    notes: document.getElementById('driverShiftNotes').value || null,
   };
 
   try {
@@ -482,21 +553,19 @@ async function handleAddLedger(event) {
     const result = await res.json();
     if (!res.ok || !result.success) throw new Error(result.error || 'Failed to post ledger');
 
-    closeModal('addLedgerModal');
-    showToast('Daily shift ledger posted successfully!', 'success');
-    await loadDriverLedgerData(state.selectedDriverId);
+    closeModal('driverAddLedgerModal');
+    showToast('Shift ledger entry posted successfully!', 'success');
+    await loadDriverPersonalLedger();
   } catch (err) {
     showToast(err.message, 'error');
   }
 }
 
-// =============================================================================
-// FAMILY WELFARE DATA
-// =============================================================================
-async function loadDriverFamilyData(driverId = state.selectedDriverId) {
-  if (!driverId) return;
-
-  const grid = document.getElementById('driverFamilyGrid');
+// Family Welfare
+async function loadDriverPersonalFamily() {
+  if (!state.currentUser) return;
+  const driverId = state.currentUser.id;
+  const grid = document.getElementById('driverPersonalFamilyGrid');
 
   try {
     const res = await fetch(`${API_BASE}/driver/family/${driverId}`);
@@ -508,13 +577,10 @@ async function loadDriverFamilyData(driverId = state.selectedDriverId) {
 
     if (family.length === 0) {
       grid.innerHTML = `
-        <div style="grid-column: 1 / -1; text-align: center; padding: 3rem 1.5rem; background: #FAFBFD; border: 1px dashed var(--border-light); border-radius: var(--radius-md);">
+        <div style="grid-column: 1 / -1; text-align: center; padding: 3rem 1.5rem; background: #FFFFFF; border: 1px dashed var(--border-light); border-radius: var(--radius-md);">
           <i class="fa-solid fa-people-roof" style="font-size: 2.5rem; color: #94A3B8; margin-bottom: 0.75rem;"></i>
           <h4 style="font-size: 1.15rem; font-weight: 800; color: #0F172A; margin-bottom: 0.25rem;">No family beneficiaries registered</h4>
-          <p style="font-size: 0.88rem; color: #64748B;">Add spouse, children, or dependents for corporate welfare protection.</p>
-          <button class="btn-saas btn-saas-secondary btn-sm" style="margin-top: 1rem;" onclick="openAddFamilyForCurrentDriver()">
-            <i class="fa-solid fa-plus"></i> Add Beneficiary
-          </button>
+          <p style="font-size: 0.88rem; color: #64748B;">Please contact administration to register family members for corporate healthcare coverage.</p>
         </div>
       `;
       return;
@@ -547,75 +613,163 @@ async function loadDriverFamilyData(driverId = state.selectedDriverId) {
   }
 }
 
-function openAddFamilyForCurrentDriver() {
-  if (!state.selectedDriverId) {
-    showToast('Please select a driver workspace first.', 'error');
-    return;
-  }
-  document.getElementById('familyTargetDriver').value = state.selectedDriverId;
-  document.getElementById('familyMemberName').value = '';
-  document.getElementById('familyDob').value = '';
-  openModal('addFamilyModal');
-}
-
-async function handleAddFamily(event) {
-  event.preventDefault();
-
-  const payload = {
-    driver_id: document.getElementById('familyTargetDriver').value,
-    member_name: document.getElementById('familyMemberName').value,
-    relation: document.getElementById('familyRelation').value,
-    dob: document.getElementById('familyDob').value || null,
-  };
+// =============================================================================
+// ADMIN DASHBOARD (FLEET DIRECTORY, UNIQUE ONBOARDING, DOCUMENT UPLOADS)
+// =============================================================================
+async function loadAdminDashboardData() {
+  const tbody = document.getElementById('adminFleetTableBody');
+  const countNotice = document.getElementById('adminTableCount');
 
   try {
-    const res = await fetch(`${API_BASE}/admin/driver-family`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+    const res = await fetch(`${API_BASE}/admin/drivers`);
+    const result = await res.json();
+
+    if (!result.success || !result.data) {
+      throw new Error(result.error || 'Failed to fetch drivers');
+    }
+
+    state.drivers = result.data;
+
+    // Update KPI metrics
+    const totalDrivers = state.drivers.length;
+    let totalDocs = 0;
+    let alertDocs = 0;
+    const now = new Date();
+
+    state.drivers.forEach((d) => {
+      const docs = d.driver_documents || [];
+      totalDocs += docs.length;
+      docs.forEach((doc) => {
+        if (doc.expiry_date) {
+          const diff = new Date(doc.expiry_date) - now;
+          const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+          if (days <= 30) alertDocs++;
+        }
+      });
     });
 
-    const result = await res.json();
-    if (!res.ok || !result.success) throw new Error(result.error || 'Failed to register family member');
+    document.getElementById('adminKpiDrivers').textContent = totalDrivers;
+    document.getElementById('adminKpiVaultDocs').textContent = totalDocs.toLocaleString('en-IN');
+    document.getElementById('adminKpiAlertDocs').textContent = alertDocs;
+    if (countNotice) countNotice.textContent = `${totalDrivers} registered drivers`;
 
-    closeModal('addFamilyModal');
-    showToast('Welfare beneficiary registered!', 'success');
-    if (state.selectedDriverId === payload.driver_id) {
-      await loadDriverFamilyData(state.selectedDriverId);
-    }
+    // Populate dropdowns in modals
+    populateAdminModalsDrivers(state.drivers);
+
+    // Render Table
+    renderAdminFleetTable(state.drivers);
   } catch (err) {
-    showToast(err.message, 'error');
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" style="text-align: center; padding: 2.5rem; color: #DC2626;">
+          <i class="fa-solid fa-circle-exclamation"></i> Error loading fleet data: ${err.message}
+        </td>
+      </tr>
+    `;
   }
 }
 
-// =============================================================================
-// ONBOARDING & DOCUMENT UPLOADS
-// =============================================================================
-function openCreateDriverModal() {
-  document.getElementById('newFullName').value = '';
-  document.getElementById('newPhone').value = '';
-  document.getElementById('newEmail').value = '';
-  document.getElementById('newVehicleNumber').value = '';
-  document.getElementById('newVehicleModel').value = '';
-  document.getElementById('newLicenseNumber').value = '';
-  document.getElementById('newCustomPassword').value = '';
-  openModal('createDriverModal');
+function renderAdminFleetTable(drivers) {
+  const tbody = document.getElementById('adminFleetTableBody');
+
+  if (!drivers || drivers.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" style="text-align: center; padding: 2.5rem; color: #64748B;">
+          No drivers onboarded yet. Click <strong>"+ Onboard Driver"</strong> above to register your first vehicle.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = drivers.map((d) => {
+    const docsCount = d.driver_documents ? d.driver_documents.length : 0;
+    const statusPill = d.is_active
+      ? `<span class="status-pill-saas allocated"><i class="fa-solid fa-circle-check"></i> Active</span>`
+      : `<span class="status-pill-saas pending"><i class="fa-solid fa-ban"></i> Suspended</span>`;
+
+    return `
+      <tr>
+        <td>
+          <div class="driver-cell-name">${escapeHtml(d.full_name)}</div>
+          <div class="driver-cell-sub">
+            <span style="font-weight: 700; color: var(--brand-teal);">@${escapeHtml(d.username || 'driver')}</span>
+          </div>
+        </td>
+        <td>
+          <div style="font-weight: 600;">${escapeHtml(d.phone)}</div>
+          <div class="driver-cell-sub">${escapeHtml(d.email || 'No email')}</div>
+        </td>
+        <td>
+          <span class="plate-badge">${escapeHtml(d.vehicle_number)}</span>
+        </td>
+        <td>${escapeHtml(d.vehicle_model)}</td>
+        <td><code style="color: #0F766E; font-weight: 700;">${escapeHtml(d.license_number)}</code></td>
+        <td><span class="status-pill-saas valid">${docsCount} docs</span></td>
+        <td>${statusPill}</td>
+        <td>
+          <div style="display: flex; gap: 0.4rem;">
+            <button class="btn-saas btn-saas-secondary btn-sm" title="Upload Document" onclick="openAdminUploadDocForSpecific('${d.id}')">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
 }
 
-async function handleCreateDriver(event) {
+function filterAdminFleetTable() {
+  const query = document.getElementById('adminDirectorySearch').value.toLowerCase().trim();
+  const filtered = state.drivers.filter((d) => {
+    return (
+      d.full_name.toLowerCase().includes(query) ||
+      (d.username && d.username.toLowerCase().includes(query)) ||
+      d.phone.toLowerCase().includes(query) ||
+      d.vehicle_number.toLowerCase().includes(query) ||
+      d.license_number.toLowerCase().includes(query) ||
+      d.vehicle_model.toLowerCase().includes(query)
+    );
+  });
+  renderAdminFleetTable(filtered);
+}
+
+function populateAdminModalsDrivers(drivers) {
+  const select = document.getElementById('adminDocDriverSelect');
+  if (select) {
+    const opts = drivers.map((d) => `<option value="${d.id}">${d.full_name} (@${d.username || d.phone}) - ${d.vehicle_number}</option>`).join('');
+    select.innerHTML = `<option value="">-- Choose Driver --</option>` + opts;
+  }
+}
+
+// Onboard Driver Modal
+function openAdminOnboardModal() {
+  document.getElementById('onboardFullName').value = '';
+  document.getElementById('onboardPhone').value = '';
+  document.getElementById('onboardEmail').value = '';
+  document.getElementById('onboardVehicleNumber').value = '';
+  document.getElementById('onboardVehicleModel').value = '';
+  document.getElementById('onboardLicenseNumber').value = '';
+  openModal('adminOnboardDriverModal');
+}
+
+/**
+ * Onboard Driver: Generates unique username & password guaranteed not to collide with prior users
+ */
+async function handleAdminOnboardDriver(event) {
   event.preventDefault();
-  const btn = document.getElementById('btnSubmitDriver');
+  const btn = document.getElementById('btnAdminOnboardSubmit');
   btn.disabled = true;
-  btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Deploying...`;
+  btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating Unique Credentials...`;
 
   const payload = {
-    full_name: document.getElementById('newFullName').value,
-    phone: document.getElementById('newPhone').value,
-    email: document.getElementById('newEmail').value || null,
-    vehicle_number: document.getElementById('newVehicleNumber').value,
-    vehicle_model: document.getElementById('newVehicleModel').value,
-    license_number: document.getElementById('newLicenseNumber').value,
-    custom_password: document.getElementById('newCustomPassword').value || null,
+    full_name: document.getElementById('onboardFullName').value,
+    phone: document.getElementById('onboardPhone').value,
+    email: document.getElementById('onboardEmail').value || null,
+    vehicle_number: document.getElementById('onboardVehicleNumber').value,
+    vehicle_model: document.getElementById('onboardVehicleModel').value,
+    license_number: document.getElementById('onboardLicenseNumber').value,
   };
 
   try {
@@ -626,67 +780,63 @@ async function handleCreateDriver(event) {
     });
 
     const result = await res.json();
-    if (!res.ok || !result.success) throw new Error(result.error || 'Failed to create driver');
+    if (!res.ok || !result.success) throw new Error(result.error || 'Failed to onboard driver');
 
-    closeModal('createDriverModal');
-    showToast('Driver workspace deployed successfully!', 'success');
+    closeModal('adminOnboardDriverModal');
+    showToast('Driver onboarded with unique credentials!', 'success');
 
+    // Display generated unique username and temporary password
     document.getElementById('credName').textContent = result.data.full_name;
+    document.getElementById('credUsername').textContent = `@${result.data.username}`;
     document.getElementById('credPhone').textContent = result.data.phone;
     document.getElementById('credPassword').textContent = result.data.temporary_password;
     openModal('driverCredentialsModal');
 
-    await loadAdminFleetData();
+    await loadAdminDashboardData();
   } catch (err) {
     showToast(err.message, 'error');
   } finally {
     btn.disabled = false;
-    btn.innerHTML = 'Deploy Profile';
+    btn.innerHTML = '<i class="fa-solid fa-user-plus"></i> Generate Credentials & Onboard';
   }
 }
 
 function copyCredentials() {
   const name = document.getElementById('credName').textContent;
+  const username = document.getElementById('credUsername').textContent;
   const phone = document.getElementById('credPhone').textContent;
   const pass = document.getElementById('credPassword').textContent;
 
-  const text = `Welcome to Aaride Enterprise!\nDriver: ${name}\nLogin Phone: ${phone}\nTemporary Password: ${pass}\nPortal: ${window.location.origin}`;
+  const text = `Welcome to Aaride!\nDriver: ${name}\nUsername: ${username}\nLogin Phone: ${phone}\nTemporary Password: ${pass}\nPortal: ${window.location.origin}/#/login`;
   navigator.clipboard.writeText(text).then(() => {
     showToast('Credentials copied to clipboard!', 'success');
   });
 }
 
-function openUploadDocModal() {
-  document.getElementById('docNumber').value = '';
-  document.getElementById('docFileUrl').value = '';
-  document.getElementById('docIssueDate').value = '';
-  document.getElementById('docExpiryDate').value = '';
-  openModal('uploadDocModal');
+// Upload Document Modal
+function openAdminUploadDocModal() {
+  document.getElementById('adminDocNumber').value = '';
+  document.getElementById('adminDocFileUrl').value = '';
+  document.getElementById('adminDocIssueDate').value = '';
+  document.getElementById('adminDocExpiryDate').value = '';
+  openModal('adminUploadDocModal');
 }
 
-function openUploadDocForSpecificDriver(driverId) {
-  openUploadDocModal();
-  document.getElementById('docTargetDriver').value = driverId;
+function openAdminUploadDocForSpecific(driverId) {
+  openAdminUploadDocModal();
+  document.getElementById('adminDocDriverSelect').value = driverId;
 }
 
-function openUploadDocForCurrentDriver() {
-  if (!state.selectedDriverId) {
-    showToast('Please select a driver workspace first.', 'error');
-    return;
-  }
-  openUploadDocForSpecificDriver(state.selectedDriverId);
-}
-
-async function handleUploadDoc(event) {
+async function handleAdminUploadDoc(event) {
   event.preventDefault();
 
   const payload = {
-    driver_id: document.getElementById('docTargetDriver').value,
-    doc_type: document.getElementById('docType').value,
-    doc_number: document.getElementById('docNumber').value || null,
-    file_url: document.getElementById('docFileUrl').value,
-    issue_date: document.getElementById('docIssueDate').value || null,
-    expiry_date: document.getElementById('docExpiryDate').value || null,
+    driver_id: document.getElementById('adminDocDriverSelect').value,
+    doc_type: document.getElementById('adminDocType').value,
+    doc_number: document.getElementById('adminDocNumber').value || null,
+    file_url: document.getElementById('adminDocFileUrl').value,
+    issue_date: document.getElementById('adminDocIssueDate').value || null,
+    expiry_date: document.getElementById('adminDocExpiryDate').value,
   };
 
   try {
@@ -697,72 +847,11 @@ async function handleUploadDoc(event) {
     });
 
     const result = await res.json();
-    if (!res.ok || !result.success) throw new Error(result.error || 'Failed to upload document reference');
+    if (!res.ok || !result.success) throw new Error(result.error || 'Failed to map document to vault');
 
-    closeModal('uploadDocModal');
-    showToast('Document mapped to vault!', 'success');
-
-    await loadAdminFleetData();
-    if (state.selectedDriverId === payload.driver_id) {
-      await loadDriverVaultCards(state.selectedDriverId);
-    }
-  } catch (err) {
-    showToast(err.message, 'error');
-  }
-}
-
-// =============================================================================
-// SPLIT-SCREEN AUTH MODAL (IMAGE 2)
-// =============================================================================
-function openSplitAuthModal() {
-  const modal = document.getElementById('splitAuthModal');
-  if (modal) modal.classList.add('active');
-}
-
-function closeSplitAuthModal() {
-  const modal = document.getElementById('splitAuthModal');
-  if (modal) modal.classList.remove('active');
-}
-
-async function handleSplitAuthLogin(event) {
-  event.preventDefault();
-  const identifier = document.getElementById('authIdentifier').value.trim();
-  const password = document.getElementById('authPassword').value;
-
-  try {
-    // Attempt driver login first
-    const res = await fetch(`${API_BASE}/driver/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ identifier, password }),
-    });
-
-    const result = await res.json();
-
-    if (res.ok && result.success) {
-      closeSplitAuthModal();
-      showToast(`Welcome back, ${result.data.full_name}!`, 'success');
-      viewDriverWorkspace(result.data.id);
-      return;
-    }
-
-    // Otherwise check admin login by email
-    if (identifier.includes('@')) {
-      const adminRes = await fetch(`${API_BASE}/admin/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: identifier }),
-      });
-      const adminResult = await adminRes.json();
-      if (adminRes.ok && adminResult.success) {
-        closeSplitAuthModal();
-        showToast(`Welcome Admin, ${adminResult.data.full_name}!`, 'success');
-        switchWindowView('admin');
-        return;
-      }
-    }
-
-    throw new Error(result.error || 'Invalid credentials. Please verify your phone/email and password.');
+    closeModal('adminUploadDocModal');
+    showToast('Document mapped to driver vault successfully!', 'success');
+    await loadAdminDashboardData();
   } catch (err) {
     showToast(err.message, 'error');
   }
@@ -783,9 +872,6 @@ function closeModal(id) {
 
 window.addEventListener('click', (e) => {
   if (e.target.classList.contains('modal-overlay')) {
-    e.target.classList.remove('active');
-  }
-  if (e.target.classList.contains('split-auth-modal')) {
     e.target.classList.remove('active');
   }
 });

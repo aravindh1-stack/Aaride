@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS public.admins (
 -- 2. Drivers Master Table (Driver Profile managed via Admin Portal)
 CREATE TABLE IF NOT EXISTS public.drivers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  username TEXT UNIQUE,         -- Generated unique handle based on email and name
   full_name TEXT NOT NULL,
   phone TEXT UNIQUE NOT NULL,
   email TEXT UNIQUE,
@@ -25,6 +26,9 @@ CREATE TABLE IF NOT EXISTS public.drivers (
   is_active BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Migration helper if table already exists
+ALTER TABLE public.drivers ADD COLUMN IF NOT EXISTS username TEXT UNIQUE;
 
 -- 3. Driver Document Vault Table (Admin uploaded docs with expiry tracking)
 CREATE TABLE IF NOT EXISTS public.driver_documents (

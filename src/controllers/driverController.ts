@@ -5,30 +5,29 @@ import { ApiResponse, Driver, DriverDocument, DriverLedger } from '../types/data
 
 /**
  * POST /api/driver/login
- * Authenticate driver via phone OR email and password
+ * Authenticate driver via username, phone, OR email and password
  */
 export async function driverLogin(req: Request, res: Response<ApiResponse>): Promise<void> {
   try {
-    const { identifier, phone, email, password } = req.body;
-
-    // Driver can pass `phone`, `email`, or a generic `identifier` (which can be either)
-    const loginIdentifier = (identifier || phone || email || '').trim();
+    const { identifier, phone, email, username, password } = req.body;
+    const loginIdentifier = (identifier || username || phone || email || '').trim();
 
     if (!loginIdentifier || !password) {
       res.status(400).json({
         success: false,
-        error: 'Phone/Email and password are required for login.',
+        error: 'Username/Phone/Email and password are required for login.',
       });
       return;
     }
 
-    // Determine query: search by phone or email
     let query = supabase.from('drivers').select('*');
 
     if (loginIdentifier.includes('@')) {
       query = query.eq('email', loginIdentifier.toLowerCase());
-    } else {
+    } else if (/^\+?[0-9]{7,15}$/.test(loginIdentifier)) {
       query = query.eq('phone', loginIdentifier);
+    } else {
+      query = query.or(`username.eq.${loginIdentifier.toLowerCase()},phone.eq.${loginIdentifier}`);
     }
 
     const { data: driver, error } = await query.maybeSingle();
@@ -44,7 +43,7 @@ export async function driverLogin(req: Request, res: Response<ApiResponse>): Pro
     if (!driver) {
       res.status(401).json({
         success: false,
-        error: 'Invalid phone/email or account not found.',
+        error: 'Invalid username, phone, or account not found.',
       });
       return;
     }
@@ -85,7 +84,7 @@ export async function driverLogin(req: Request, res: Response<ApiResponse>): Pro
 
 /**
  * GET /api/driver/vault/:driverId
- * Fetch all documents and expiration details for a specific driver with status computation
+ * Fetch all verified documents and expiration details for a specific driver
  */
 export async function getDriverVault(req: Request, res: Response<ApiResponse>): Promise<void> {
   try {
@@ -114,7 +113,7 @@ export async function getDriverVault(req: Request, res: Response<ApiResponse>): 
       return;
     }
 
-    // Fetch documents
+    // Fetch documents strictly belonging to this driver
     const { data: documents, error: docsError } = await supabase
       .from('driver_documents')
       .select('*')
@@ -174,6 +173,104 @@ export async function getDriverVault(req: Request, res: Response<ApiResponse>): 
 }
 
 /**
+ * PUT /api/driver/document/:docId
+ * Update document metadata (start date, end date, doc number)
+ * Driver CANNOT edit or replace the uploaded file_url (security guarantee)
+ */
+export async function updateDriverDocument(req: Request, res: Response<ApiResponse>): Promise<void> {
+  try {
+    const { docId } = req.params;
+    const { driver_id, doc_number, issue_date, expiry_date } = req.body;
+
+    if (!docId) {
+      res.status(400).json({
+        success: false,
+        error: 'Document ID is required.',
+      });
+      return;
+    }
+
+    // 1. Verify document exists and belongs to requesting driver
+    const { data: existingDoc, error: checkError } = await supabase
+      .from('driver_documents')
+      .select('*')
+      .eq('id', docId)
+      .maybeSingle();
+
+    if (checkError || !existingDoc) {
+      res.status(404).json({
+        success: false,
+        error: 'Target document was not found.',
+      });
+      return;
+    }
+
+    if (driver_id && existingDoc.driver_id !== driver_id) {
+      res.status(403).json({
+        success: false,
+        error: 'Unauthorized: You can only edit documents that belong to your personal vault.',
+      });
+      return;
+    }
+
+    // 2. Perform update on metadata ONLY. file_url and doc_type cannot be modified by driver!
+    const updatePayload: any = {};
+    if (doc_number !== undefined) updatePayload.doc_number = doc_number ? String(doc_number).trim() : null;
+    if (issue_date !== undefined) updatePayload.issue_date = issue_date || null;
+    if (expiry_date !== undefined) updatePayload.expiry_date = expiry_date || null;
+
+    const { data: updatedDoc, error: updateError } = await supabase
+      .from('driver_documents')
+      .update(updatePayload)
+      .eq('id', docId)
+      .select()
+      .single();
+
+    if (updateError) {
+      res.status(500).json({
+        success: false,
+        error: `Failed to update document metadata: ${updateError.message}`,
+      });
+      return;
+    }
+
+    // Recalculate status
+    const today = new Date();
+    let status: 'VALID' | 'EXPIRING_SOON' | 'EXPIRED' | 'NO_EXPIRY' = 'NO_EXPIRY';
+    let daysRemaining: number | null = null;
+
+    if (updatedDoc.expiry_date) {
+      const expiry = new Date(updatedDoc.expiry_date);
+      const diffTime = expiry.getTime() - today.getTime();
+      daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (daysRemaining < 0) {
+        status = 'EXPIRED';
+      } else if (daysRemaining <= 30) {
+        status = 'EXPIRING_SOON';
+      } else {
+        status = 'VALID';
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Document dates and reference number updated successfully.',
+      data: {
+        ...updatedDoc,
+        status,
+        days_remaining: daysRemaining,
+      },
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      error: `Internal server error: ${err.message || 'Unknown error'}`,
+    });
+  }
+}
+
+/**
  * POST /api/driver/ledger
  * Insert a daily financial record into `driver_ledger`
  */
@@ -202,7 +299,6 @@ export async function addLedgerEntry(req: Request, res: Response<ApiResponse>): 
 
     const targetDate = entry_date ? String(entry_date).trim() : new Date().toISOString().split('T')[0];
 
-    // Insert record
     const { data: ledgerEntry, error } = await supabase
       .from('driver_ledger')
       .insert({
@@ -280,7 +376,6 @@ export async function getDriverLedger(req: Request, res: Response<ApiResponse>):
 
     const ledgerList = entries || [];
 
-    // Calculate aggregated metrics
     const totalIncome = ledgerList.reduce((sum, item) => sum + Number(item.income || 0), 0);
     const totalExpense = ledgerList.reduce((sum, item) => sum + Number(item.expense || 0), 0);
     const netProfit = totalIncome - totalExpense;

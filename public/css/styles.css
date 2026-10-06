@@ -1267,7 +1267,123 @@ body {
 }
 
 .toast-msg.success i { color: #34D399; }
-.toast-msg.error i { color: #F87171; }
+/* ==========================================================================
+   PAGE VIEW ROUTING (LANDING -> LOGIN -> DRIVER DASHBOARD / ADMIN DASHBOARD)
+   ========================================================================== */
+.app-view {
+  display: none;
+  animation: pageFadeIn 0.25s ease-out;
+}
+
+.app-view.active {
+  display: block;
+}
+
+@keyframes pageFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Dedicated Login Page View (Full Screen Split View from Image 2) */
+.login-page-container {
+  min-height: calc(100vh - 70px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+}
+
+.split-login-card {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  width: 100%;
+  max-width: 1040px;
+  background: #FFFFFF;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.12), 0 10px 25px -5px rgba(13, 148, 136, 0.08);
+  border: 1px solid var(--border-light);
+}
+
+.quick-demo-pills {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.demo-chip {
+  background: #F1F5F9;
+  border: 1px solid #CBD5E1;
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius-full);
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.demo-chip:hover {
+  background: var(--brand-primary);
+  color: #FFFFFF;
+  border-color: var(--brand-primary);
+}
+
+/* Security Notice for Non-Editable Files in Driver Vault */
+.security-notice-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  padding: 0.65rem 0.95rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  color: #1E40AF;
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+}
+
+.security-notice-badge i {
+  color: #2563EB;
+  font-size: 1rem;
+}
+
+.readonly-file-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #F8FAFC;
+  border: 1px solid var(--border-light);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.86rem;
+  color: #475569;
+}
+
+.user-badge-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  background: #F1F5F9;
+  border: 1px solid var(--border-light);
+  padding: 0.35rem 0.85rem;
+  border-radius: var(--radius-full);
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #0F172A;
+}
+
+.user-role-tag {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  background: var(--brand-primary);
+  color: #FFFFFF;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-full);
+  font-weight: 800;
+}
 
 @media (max-width: 992px) {
   .saas-kpi-grid {
@@ -1276,7 +1392,7 @@ body {
   .feature-cards-grid {
     grid-template-columns: 1fr;
   }
-  .split-auth-dialog {
+  .split-auth-dialog, .split-login-card {
     grid-template-columns: 1fr;
   }
   .auth-left-pane {

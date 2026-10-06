@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import adminRoutes from './routes/adminRoutes';
 import driverRoutes from './routes/driverRoutes';
+import authRoutes from './routes/authRoutes';
 
 import path from 'path';
 
@@ -62,6 +63,7 @@ app.get('/api', (_req: Request, res: Response) => {
 });
 
 // Register Domain Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/driver', driverRoutes);
 

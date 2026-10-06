@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   driverLogin,
   getDriverVault,
+  updateDriverDocument,
   addLedgerEntry,
   getDriverLedger,
   getDriverFamily,
@@ -14,6 +15,7 @@ router.post('/login', driverLogin);
 
 // Document Vault
 router.get('/vault/:driverId', getDriverVault);
+router.put('/document/:docId', updateDriverDocument); // Edit issue_date, expiry_date, doc_number ONLY
 
 // Daily Ledger & Financials
 router.post('/ledger', addLedgerEntry);

@@ -2,11 +2,13 @@ export interface Admin {
   id: string;
   email: string;
   full_name: string;
+  password_hash?: string;
   created_at: string;
 }
 
 export interface Driver {
   id: string;
+  username?: string | null;
   full_name: string;
   phone: string;
   email?: string | null;
@@ -27,6 +29,8 @@ export interface DriverDocument {
   issue_date?: string | null;
   expiry_date?: string | null;
   created_at: string;
+  status?: 'VALID' | 'EXPIRING_SOON' | 'EXPIRED' | 'NO_EXPIRY';
+  days_remaining?: number | null;
 }
 
 export interface DriverFamily {
@@ -46,6 +50,20 @@ export interface DriverLedger {
   expense: number;
   notes?: string | null;
   created_at: string;
+}
+
+// Unified Authentication Response
+export interface AuthUser {
+  id: string;
+  role: 'admin' | 'driver';
+  full_name: string;
+  email?: string | null;
+  username?: string | null;
+  phone?: string | null;
+  vehicle_number?: string | null;
+  vehicle_model?: string | null;
+  license_number?: string | null;
+  is_active?: boolean;
 }
 
 // Request & Response helper types
