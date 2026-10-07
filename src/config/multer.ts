@@ -1,4 +1,5 @@
 import multer from 'multer';
+import path from 'path';
 
 // Memory storage keeps uploaded file buffers in memory for immediate streaming to Supabase Storage
 const storage = multer.memoryStorage();
@@ -6,22 +7,27 @@ const storage = multer.memoryStorage();
 export const upload = multer({
   storage,
   limits: {
-    fileSize: 15 * 1024 * 1024, // 15MB max file size
+    fileSize: 25 * 1024 * 1024, // 25MB max file size
   },
   fileFilter: (_req, file, cb) => {
-    // Allowed file types: PDF, PNG, JPEG, WEBP
-    const allowedMimes = [
+    const ext = path.extname(file.originalname).toLowerCase();
+    const validExtensions = ['.pdf', '.png', '.jpg', '.jpeg', '.webp', '.jfif', '.bmp', '.tiff'];
+    const validMimes = [
       'application/pdf',
       'image/jpeg',
       'image/png',
       'image/webp',
       'image/jpg',
+      'image/pjpeg',
+      'image/jfif',
+      'image/bmp',
+      'application/octet-stream',
     ];
 
-    if (allowedMimes.includes(file.mimetype)) {
+    if (validMimes.includes(file.mimetype.toLowerCase()) || validExtensions.includes(ext)) {
       cb(null, true);
     } else {
-      cb(new Error('Invalid file type! Please upload a PDF, PNG, JPG, or WEBP file.'));
+      cb(new Error(`File type '${file.mimetype}' is not supported. Please upload a PDF or image.`));
     }
   },
 });

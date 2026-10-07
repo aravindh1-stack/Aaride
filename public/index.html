@@ -1,281 +1,353 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aaride — Enterprise Vehicle & Driver Vault | SaaS OS</title>
-  <meta name="description" content="Enterprise-grade operating system for vehicle document vaults, expiry telemetry, daily financial ledgers, and family welfare." />
+  <meta name="description" content="Operating system for vehicle document vaults, expiry telemetry, daily shift ledgers, and family welfare." />
   
   <!-- Strictly Urbanist Google Font -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,300..900;1,300..900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet" />
   
-  <!-- FontAwesome Icons for UI -->
+  <!-- FontAwesome Icons for UI (Used strictly in necessary places) -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <link rel="stylesheet" href="/css/styles.css" />
 </head>
 <body>
 
   <!-- ========================================================================
-       TOP HIGH-SAAS NAVBAR
+       TOP NAVBAR (AARCODE STYLE)
        ======================================================================== -->
   <header class="saas-navbar">
     <div class="nav-left">
       <div class="brand-wrapper" onclick="navigateTo('landing')">
-        <div class="brand-icon-box">A</div>
+        <div class="brand-icon-box">
+          <i class="fa-solid fa-play" style="transform: rotate(-90deg); font-size: 0.85rem;"></i>
+        </div>
         <span class="brand-title">Aaride</span>
-        <span class="brand-version-pill">v2.4 SaaS</span>
+        <span class="brand-version-pill">v2.4</span>
       </div>
 
-      <!-- Public Nav (Visible on Landing/Login) -->
+      <!-- Public Navigation Links -->
       <nav class="nav-menu" id="navPublic">
-        <a href="#landing" class="nav-link active" onclick="navigateTo('landing')">
-          <i class="fa-solid fa-house"></i> Overview
-        </a>
-        <a href="#corePlatformSection" class="nav-link">
-          <i class="fa-solid fa-layer-group"></i> Architecture
-        </a>
+        <a href="#landing" class="nav-link active" onclick="navigateTo('landing')">Overview</a>
+        <a href="#showcaseSection" class="nav-link">Telemetry</a>
+        <a href="#pricingSection" class="nav-link">Plans</a>
+        <a href="#faqSection" class="nav-link">FAQ</a>
       </nav>
 
-      <!-- Authenticated Nav (Visible when logged in) -->
+      <!-- Authenticated Navigation Links -->
       <nav class="nav-menu" id="navAuthenticated" style="display: none;">
         <button class="nav-link active" id="authDashboardLink" onclick="navigateToUserDashboard()">
-          <i class="fa-solid fa-gauge"></i> My Dashboard
+          <i class="fa-solid fa-gauge" style="font-size: 0.82rem;"></i> Dashboard
         </button>
       </nav>
     </div>
 
     <div class="nav-right">
+      <!-- Theme Switcher (Dark / Light Mode) -->
+      <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
+        <i class="fa-solid fa-sun" id="themeIcon"></i>
+      </button>
+
+      <!-- Live Status Telemetry Pill -->
       <div class="telemetry-pill" id="telemetryPill">
         <span class="telemetry-dot"></span>
-        <span id="telemetryText">Live Telemetry</span>
+        <span id="telemetryText">Live</span>
       </div>
 
-      <!-- Not Logged In -->
+      <!-- Guest Actions -->
       <div id="navGuestActions" style="display: flex; gap: 0.75rem; align-items: center;">
         <button class="btn-saas btn-saas-secondary btn-sm" onclick="navigateTo('login')">
-          <i class="fa-solid fa-arrow-right-to-bracket"></i> Sign In
+          Sign In
         </button>
         <button class="btn-saas btn-saas-primary btn-sm" onclick="navigateTo('login')">
-          Get Started
+          Get Started <i class="fa-solid fa-arrow-right" style="font-size: 0.75rem;"></i>
         </button>
       </div>
 
       <!-- Logged In User Profile -->
       <div id="navUserActions" style="display: none; align-items: center; gap: 0.85rem;">
-        <div class="user-badge-nav">
-          <i class="fa-solid fa-circle-user" style="color: var(--brand-teal);"></i>
+        <div class="telemetry-pill">
+          <i class="fa-solid fa-circle-user" style="color: var(--brand-primary); font-size: 0.95rem;"></i>
           <span id="navUserName">User</span>
-          <span class="user-role-tag" id="navUserRole">ROLE</span>
+          <span class="status-pill-saas valid" id="navUserRole" style="padding: 0.1rem 0.5rem; font-size: 0.68rem;">ROLE</span>
         </div>
         <button class="btn-saas btn-saas-secondary btn-sm" onclick="handleSignOut()">
-          <i class="fa-solid fa-power-off"></i> Sign Out
+          <i class="fa-solid fa-power-off" style="font-size: 0.8rem;"></i> Sign Out
         </button>
       </div>
     </div>
   </header>
 
   <!-- ========================================================================
-       VIEW 1: LANDING PAGE
+       VIEW 1: LANDING PAGE (MATCHES AARCODE HERO & SHOWCASE)
        ======================================================================== -->
   <main id="viewLanding" class="app-view active">
+    
     <!-- Hero Section -->
-    <section class="saas-hero">
-      <div class="announcement-pill">
-        <i class="fa-solid fa-sparkles"></i>
-        <span>✦ The Next-Gen Operating System for Fleet & Driver Vaults</span>
-      </div>
+    <section class="saas-hero-container">
+      <div class="saas-hero-split">
+        <div>
+          <div class="hero-badge-tag">
+            <span>Unified Fleet Governance</span>
+          </div>
 
-      <h1 class="hero-heading">
-        Scale Your <span class="text-gradient">Vehicle & Driver Operations</span><br />
-        with <span class="text-gradient">Absolute Precision</span>
-      </h1>
+          <h1 class="hero-heading">
+            Master Fleet Logic.<br />
+            Scale Your Driver Vaults.
+          </h1>
 
-      <p class="hero-subtitle">
-        Automate vehicle document vaults, expiry countdown telemetry, and daily shift financial ledgers with atomic precision and multi-tenant branch management.
-      </p>
+          <p class="hero-subtitle">
+            An all-in-one interactive platform to manage vehicle compliance, automate document expiry countdowns, and record daily shift ledgers — engineered for modern fleet operations.
+          </p>
 
-      <div class="hero-cta-group">
-        <button class="btn-saas btn-saas-primary" onclick="navigateTo('login')">
-          Access Workspace <i class="fa-solid fa-arrow-right"></i>
-        </button>
-        <a href="#corePlatformSection" class="btn-saas btn-saas-secondary">
-          Explore Platform Architecture
-        </a>
+          <div class="hero-cta-group">
+            <button class="btn-saas btn-saas-primary" onclick="navigateTo('login')">
+              Access Workspace <i class="fa-solid fa-arrow-right" style="font-size: 0.75rem;"></i>
+            </button>
+            <a href="#showcaseSection" class="btn-saas btn-saas-secondary">
+              Explore Telemetry
+            </a>
+          </div>
+
+          <div class="hero-social-proof">
+            <i class="fa-solid fa-circle-check" style="color: var(--brand-primary);"></i>
+            <span>Trusted across commercial auto, taxi fleets, and multi-axle cargo</span>
+          </div>
+        </div>
+
+        <!-- Preview Card -->
+        <div class="hero-illustration-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+            <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-main);">
+              Live Fleet Telemetry
+            </div>
+            <span class="status-pill-saas valid">Online</span>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+            <div style="background: var(--bg-surface-alt); border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 0.85rem 1rem; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-main);">Driving License & FC</div>
+                <div style="font-size: 0.76rem; color: var(--text-muted);">TN 28 AB 3456 • Murugan S</div>
+              </div>
+              <span class="status-pill-saas valid">Verified</span>
+            </div>
+
+            <div style="background: var(--bg-surface-alt); border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 0.85rem 1rem; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-main);">Vehicle Insurance</div>
+                <div style="font-size: 0.76rem; color: var(--text-muted);">TN 38 BX 9912 • Ravi Shankar</div>
+              </div>
+              <span class="status-pill-saas expiring">Expiring in 18d</span>
+            </div>
+
+            <div style="background: var(--bg-surface-alt); border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 0.85rem 1rem; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-main);">Daily Shift Cash-up</div>
+                <div style="font-size: 0.76rem; color: var(--text-muted);">Net ₹1,400.00 • Reconciled</div>
+              </div>
+              <span class="status-pill-saas valid">Settled</span>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
-    <!-- macOS Command Center Window Preview -->
-    <section class="command-center-wrap">
-      <div class="command-window">
-        <div class="window-topbar">
-          <div class="mac-dots">
-            <span class="mac-dot dot-red"></span>
-            <span class="mac-dot dot-yellow"></span>
-            <span class="mac-dot dot-green"></span>
+    <!-- Multi-Vehicle Category Strip -->
+    <div class="category-pill-strip">
+      <span class="category-tag">Commercial Auto</span>
+      <span class="category-tag">Express Taxi Fleet</span>
+      <span class="category-tag">Heavy Multi-Axle Cargo</span>
+      <span class="category-tag">Electric Last-Mile</span>
+      <span class="category-tag">Interstate Tourist Coaches</span>
+    </div>
+
+    <!-- 10,000+ Evaluated Showcase Grid (AarCode Exact Structure) -->
+    <section class="showcase-section" id="showcaseSection">
+      <div class="showcase-left">
+        <span class="hero-badge-tag">Compliance Engine</span>
+        <h2>10,000+ Documents & Shifts Managed</h2>
+        <p>
+          From statutory driver licenses and vehicle insurance policies to atomic shift collections, eliminate non-compliance fines with continuous 30-day early countdown telemetry.
+        </p>
+        <button class="btn-saas btn-saas-secondary" onclick="navigateTo('login')">
+          Explore Driver Vault <i class="fa-solid fa-arrow-right" style="font-size: 0.75rem; margin-left: 0.25rem;"></i>
+        </button>
+      </div>
+
+      <div class="showcase-grid-2x2">
+        <div class="showcase-metric-card">
+          <div class="showcase-metric-val">99.8%</div>
+          <div class="showcase-metric-title">Verification Accuracy</div>
+          <div class="showcase-metric-desc">Automated validation with administrative lock protection.</div>
+        </div>
+
+        <div class="showcase-metric-card">
+          <div class="showcase-metric-val">100+</div>
+          <div class="showcase-metric-title">Curated Document Formats</div>
+          <div class="showcase-metric-desc">Standardized schemas for RC Books, PUC, and Insurance.</div>
+        </div>
+
+        <div class="showcase-metric-card">
+          <div class="showcase-metric-val">0.2s</div>
+          <div class="showcase-metric-title">Telemetry Sync Time</div>
+          <div class="showcase-metric-desc">Instant cloud delivery across web and mobile portals.</div>
+        </div>
+
+        <div class="showcase-metric-card">
+          <div class="showcase-metric-val">100%</div>
+          <div class="showcase-metric-title">Cloud Vault Availability</div>
+          <div class="showcase-metric-desc">Encrypted storage backed by Supabase enterprise buckets.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pricing / Plans Section (AarCode Exact Highlight Replica) -->
+    <section class="pricing-section" id="pricingSection">
+      <h2 class="pricing-title">Simple, transparent pricing</h2>
+      <p class="pricing-subtitle">No contracts. No surprise fees.</p>
+
+      <div class="pricing-toggle-wrap">
+        <button class="pricing-toggle-btn active">MONTHLY</button>
+        <button class="pricing-toggle-btn">YEARLY 20% OFF</button>
+      </div>
+
+      <div class="pricing-cards-grid">
+        <!-- Card 1: Starter -->
+        <div class="pricing-card">
+          <div>
+            <div class="pricing-card-price">₹0 <span>/month</span></div>
+            <div class="pricing-card-title">Starter Driver</div>
+            <div class="pricing-card-desc">Individual driver vault for essential statutory licenses.</div>
+
+            <ul class="pricing-features-list">
+              <li class="feature-item"><i class="fa-solid fa-check"></i> <span>License & RC Book Vault</span></li>
+              <li class="feature-item"><i class="fa-solid fa-check"></i> <span>Basic Expiry Reminders</span></li>
+              <li class="feature-item"><i class="fa-solid fa-check"></i> <span>Daily Shift Cash-up Book</span></li>
+              <li class="feature-item"><i class="fa-solid fa-check"></i> <span>Mobile Web Access</span></li>
+            </ul>
           </div>
-          <div class="window-title">
-            <span>Aaride Command Center — Live Telemetry</span>
-            <span class="live-pill">LIVE</span>
-          </div>
-          <button class="btn-saas btn-saas-primary btn-sm" onclick="navigateTo('login')">
-            Sign In to Interact
+          <button class="btn-saas btn-saas-secondary" style="width: 100%;" onclick="navigateTo('login')">
+            Get Started
           </button>
         </div>
 
-        <div class="window-body">
-          <div class="saas-kpi-grid">
-            <div class="saas-kpi-card">
-              <span class="saas-kpi-label">Active Drivers</span>
-              <div class="saas-kpi-value" id="landingKpiDrivers">248</div>
-              <span class="saas-kpi-meta"><i class="fa-solid fa-arrow-up"></i> +12.4% vs last mo</span>
-            </div>
-            <div class="saas-kpi-card">
-              <span class="saas-kpi-label">Collections Today</span>
-              <div class="saas-kpi-value">₹18.6L</div>
-              <span class="saas-kpi-meta"><i class="fa-solid fa-arrow-up"></i> +8.2% gross</span>
-            </div>
-            <div class="saas-kpi-card">
-              <span class="saas-kpi-label">Vault Allocations</span>
-              <div class="saas-kpi-value" id="landingKpiDocs">1,942</div>
-              <span class="saas-kpi-meta subtle">99.8% accuracy</span>
-            </div>
-            <div class="saas-kpi-card">
-              <span class="saas-kpi-label">Branch Tenants</span>
-              <div class="saas-kpi-value">36</div>
-              <span class="saas-kpi-meta subtle">Multi-region</span>
-            </div>
-          </div>
+        <!-- Card 2: Pro Driver / Fleet Highlight (Exact Radiant Emerald Replica) -->
+        <div class="pricing-card pricing-card-highlight">
+          <span class="pricing-popular-badge">MOST POPULAR</span>
+          <div>
+            <div class="pricing-card-price">₹49 <span>/month</span></div>
+            <div class="pricing-card-title">Pro Driver</div>
+            <div class="pricing-card-desc">Comprehensive compliance, family welfare, and audit reports.</div>
 
-          <div class="table-header-bar">
-            <div>
-              <h3 class="table-header-title">Recent Document & Shift Allocations</h3>
-              <span class="table-meta-note">Updated 2s ago</span>
-            </div>
-            <button class="btn-saas btn-saas-secondary btn-sm" onclick="navigateTo('login')">
-              <i class="fa-solid fa-lock"></i> Sign In to View Live Telemetry
-            </button>
+            <ul class="pricing-features-list">
+              <li class="feature-item"><i class="fa-solid fa-check"></i> <span>All Statutory Documents</span></li>
+              <li class="feature-item"><i class="fa-solid fa-check"></i> <span>30-Day Early Expiry Alerts</span></li>
+              <li class="feature-item"><i class="fa-solid fa-check"></i> <span>Family Welfare Registry</span></li>
+              <li class="feature-item"><i class="fa-solid fa-check"></i> <span>Direct Storage File Previews</span></li>
+              <li class="feature-item"><i class="fa-solid fa-check"></i> <span>Shift Margin Summaries</span></li>
+            </ul>
           </div>
+          <button class="btn-saas btn-saas-light" style="width: 100%;" onclick="navigateTo('login')">
+            Upgrade to Pro
+          </button>
+        </div>
 
-          <div class="saas-table-container">
-            <table class="saas-table">
-              <thead>
-                <tr>
-                  <th>Member / Driver</th>
-                  <th>Scheme / Vehicle</th>
-                  <th>Route / Branch</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><strong>Murugan S</strong> <div class="driver-cell-sub">TN 28 AB 3456</div></td>
-                  <td>Commercial Auto Rickshaw</td>
-                  <td>South Hub Zone</td>
-                  <td><span class="status-pill-saas allocated">Allocated</span></td>
-                </tr>
-                <tr>
-                  <td><strong>Ravi Shankar</strong> <div class="driver-cell-sub">TN 38 BX 9912</div></td>
-                  <td>Express Taxi Fleet</td>
-                  <td>Central Depot</td>
-                  <td><span class="status-pill-saas pending">Expiring Soon</span></td>
-                </tr>
-                <tr>
-                  <td><strong>Senthil Kumar</strong> <div class="driver-cell-sub">TN 01 AK 4421</div></td>
-                  <td>Multi-Axle Cargo</td>
-                  <td>East Corridor</td>
-                  <td><span class="status-pill-saas allocated">Allocated</span></td>
-                </tr>
-              </tbody>
-            </table>
+        <!-- Card 3: Enterprise Fleet -->
+        <div class="pricing-card">
+          <div>
+            <div class="pricing-card-price">₹1,199 <span>/month</span></div>
+            <div class="pricing-card-title">Fleet / Enterprise</div>
+            <div class="pricing-card-desc">Centralized command console for vehicle depots and fleet hubs.</div>
+
+            <ul class="pricing-features-list">
+              <li class="feature-item"><i class="fa-solid fa-check"></i> <span>Unlimited Driver Profiles</span></li>
+              <li class="feature-item"><i class="fa-solid fa-check"></i> <span>Direct Supabase Bucket Upload</span></li>
+              <li class="feature-item"><i class="fa-solid fa-check"></i> <span>Role-Based Administrator Console</span></li>
+              <li class="feature-item"><i class="fa-solid fa-check"></i> <span>Multi-Tenant Depots & Hubs</span></li>
+              <li class="feature-item"><i class="fa-solid fa-check"></i> <span>Dedicated Priority Support</span></li>
+            </ul>
+          </div>
+          <button class="btn-saas btn-saas-secondary" style="width: 100%;" onclick="navigateTo('login')">
+            Contact Enterprise
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ Section (AarCode Accordion) -->
+    <section class="faq-section" id="faqSection">
+      <h2 class="faq-title">Frequently Asked Questions</h2>
+      <p class="faq-subtitle">Everything you need to know about Aaride compliance and telemetry.</p>
+
+      <div class="faq-accordion">
+        <div class="faq-item active">
+          <div class="faq-header" onclick="toggleFaq(this)">
+            <h4>Can drivers modify or replace uploaded document files?</h4>
+            <i class="fa-solid fa-chevron-down"></i>
+          </div>
+          <div class="faq-body">
+            No. In adherence to enterprise statutory compliance, only authorized administrators can upload physical files to the Supabase Storage bucket. Drivers have full view access and can update editable metadata like policy numbers and expiry dates.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-header" onclick="toggleFaq(this)">
+            <h4>How does the expiry countdown alert work?</h4>
+            <i class="fa-solid fa-chevron-down"></i>
+          </div>
+          <div class="faq-body">
+            Our background telemetry evaluates all document expiration dates daily. When an RC Book, License, or Insurance policy is within 30 days of expiring, it automatically flags as amber on both the driver and fleet manager dashboards.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-header" onclick="toggleFaq(this)">
+            <h4>How does daily shift ledger profit calculation work?</h4>
+            <i class="fa-solid fa-chevron-down"></i>
+          </div>
+          <div class="faq-body">
+            When a driver records total gross fares and shift expenses (such as fuel and maintenance), the system deterministically calculates the net shift margin and logs an immutable ledger entry.
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Core Platform Section -->
-    <section class="saas-platform-section" id="corePlatformSection">
-      <div class="platform-pretitle">CORE PLATFORM</div>
-      <h2 class="platform-heading">Enterprise-grade infrastructure for vehicle fleets at scale</h2>
-
-      <div class="feature-cards-grid">
-        <div class="feature-saas-card">
-          <div class="feature-icon-square">
-            <i class="fa-solid fa-book-bookmark"></i>
-          </div>
-          <h3 class="feature-title">Atomic Financial Ledger</h3>
-          <p class="feature-desc">
-            Automated shift collection allocations across pending fuel and maintenance overheads with deterministic net profit reconciliation.
-          </p>
-        </div>
-
-        <div class="feature-saas-card">
-          <div class="feature-icon-square">
-            <i class="fa-solid fa-shield-halved"></i>
-          </div>
-          <h3 class="feature-title">Compliance Expiry Engine</h3>
-          <p class="feature-desc">
-            Continuous expiration countdowns for RC Books, Vehicle Insurance, and Driving Licenses with automated 30-day early alert telemetry.
-          </p>
-        </div>
-
-        <div class="feature-saas-card">
-          <div class="feature-icon-square">
-            <i class="fa-solid fa-people-roof"></i>
-          </div>
-          <h3 class="feature-title">Family Welfare & Welfare Schemes</h3>
-          <p class="feature-desc">
-            Unified beneficiary registry for driver families, subsidizing emergency medical claims, insurance coverage, and welfare relief.
-          </p>
-        </div>
-
-        <div class="feature-saas-card">
-          <div class="feature-icon-square">
-            <i class="fa-solid fa-chart-line"></i>
-          </div>
-          <h3 class="feature-title">Live Telemetry & Audit Logs</h3>
-          <p class="feature-desc">
-            Real-time driver status tracking, vehicle allocation telemetry, and immutable audit trails generated for every financial shift.
-          </p>
-        </div>
-      </div>
-    </section>
   </main>
 
   <!-- ========================================================================
-       VIEW 2: DEDICATED LOGIN PAGE (SPLIT-SCREEN FROM IMAGE 2)
+       VIEW 2: DEDICATED LOGIN PAGE (SPLIT-SCREEN)
        ======================================================================== -->
   <main id="viewLogin" class="app-view">
     <div class="login-page-container">
       <div class="split-login-card">
         
-        <!-- Left Dark Emerald Grid Pane -->
+        <!-- Left Pane -->
         <div class="auth-left-pane">
-          <div class="auth-left-top">
-            <div class="auth-left-brand-icon">A</div>
-            <span style="font-size: 1.25rem; font-weight: 800;">Aaride</span>
+          <div>
+            <div class="brand-wrapper" style="margin-bottom: 2.5rem;">
+              <div class="brand-icon-box">
+                <i class="fa-solid fa-play" style="transform: rotate(-90deg); font-size: 0.85rem;"></i>
+              </div>
+              <span class="brand-title">Aaride</span>
+            </div>
+
+            <div class="auth-quote-text">
+              "We closed our daily driver cash-up in minutes instead of hours — across 36 regional fleets."
+            </div>
+            <div class="auth-quote-author">Operations Head, Regional Transit Network</div>
           </div>
 
-          <div class="auth-quote-box">
-            <h3 class="auth-quote-text">
-              “We closed our daily driver cash-up in minutes instead of hours — across 36 fleets.”
-            </h3>
-            <p class="auth-quote-author">Operations Head, Regional Transit Network</p>
-          </div>
-
-          <ul class="auth-features-list">
-            <li><i class="fa-solid fa-check"></i> Atomic daily ledger across every vehicle</li>
-            <li><i class="fa-solid fa-check"></i> Real-time document expiry telemetry</li>
-            <li><i class="fa-solid fa-check"></i> Multi-branch, role-based fleet access</li>
-          </ul>
-
-          <div class="auth-left-footer">
+          <div style="font-size: 0.8rem; color: var(--text-muted);">
             © 2026 Aaride. Enterprise Fleet SaaS OS.
           </div>
         </div>
 
-        <!-- Right Clean White Form Pane -->
+        <!-- Right Form Pane -->
         <div class="auth-right-pane">
           <h2 class="auth-title">Welcome back</h2>
           <p class="auth-subtitle">Sign in to your driver or admin workspace.</p>
@@ -287,37 +359,25 @@
             </div>
 
             <div class="form-field">
-              <div class="form-label-row">
-                <label for="loginPassword">Password</label>
-                <a href="#" class="forgot-link" onclick="alert('Please contact system administrator to reset credentials.'); return false;">Forgot password?</a>
-              </div>
+              <label for="loginPassword">Password</label>
               <input type="password" id="loginPassword" required class="saas-input" placeholder="••••••••" />
             </div>
 
-            <div class="form-checkbox-row">
-              <input type="checkbox" id="loginKeepSigned" checked />
-              <label for="loginKeepSigned">Keep me signed in</label>
-            </div>
-
-            <button type="submit" class="btn-saas btn-saas-primary" id="btnLoginSubmit" style="width: 100%; padding: 0.8rem 1rem;">
+            <button type="submit" class="btn-saas btn-saas-primary" id="btnLoginSubmit" style="width: 100%; margin-top: 0.5rem;">
               Sign In
             </button>
 
-            <!-- Quick Demo Shortcut Chips for Instant Testing -->
-            <div style="margin-top: 1.25rem;">
-              <span style="font-size: 0.78rem; font-weight: 700; color: #64748B; text-transform: uppercase;">Quick Demo Access:</span>
+            <!-- Quick Demo Shortcuts -->
+            <div style="margin-top: 1rem;">
+              <span style="font-size: 0.76rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Quick Demo Access:</span>
               <div class="quick-demo-pills">
-                <span class="demo-chip" onclick="fillDemoCredentials('admin')">👑 Demo Admin</span>
-                <span class="demo-chip" id="demoDriverChip" onclick="fillDemoCredentials('driver')">🛞 Demo Driver</span>
+                <span class="demo-chip" onclick="fillDemoCredentials('admin')">Admin Account</span>
+                <span class="demo-chip" id="demoDriverChip" onclick="fillDemoCredentials('driver')">Driver Account</span>
               </div>
             </div>
 
-            <div class="divider-saas">
-              <span>or return to</span>
-            </div>
-
-            <button type="button" class="btn-saas btn-saas-secondary" style="width: 100%;" onclick="navigateTo('landing')">
-              <i class="fa-solid fa-arrow-left"></i> Back to Home Overview
+            <button type="button" class="btn-saas btn-saas-secondary" style="width: 100%; margin-top: 0.75rem;" onclick="navigateTo('landing')">
+              Back to Overview
             </button>
           </form>
         </div>
@@ -327,62 +387,61 @@
   </main>
 
   <!-- ========================================================================
-       VIEW 3: DRIVER DASHBOARD (ISOLATED TO LOGGED-IN DRIVER)
+       VIEW 3: DRIVER DASHBOARD
        ======================================================================== -->
   <main id="viewDriverDashboard" class="app-view">
-    <div style="max-width: 1240px; margin: 2rem auto; padding: 0 1.5rem;">
+    <div style="max-width: 1200px; margin: 2rem auto; padding: 0 1.5rem;">
       
-      <!-- Driver Profile Banner -->
+      <!-- Driver Profile Bar -->
       <div class="driver-profile-saas-bar">
         <div>
           <div style="display: flex; align-items: center; gap: 0.65rem;">
-            <h2 id="driverDashName" style="font-size: 1.7rem; font-weight: 800; color: #0F172A;">Driver Portal</h2>
-            <span class="status-pill-saas allocated" id="driverDashStatus">ACTIVE</span>
+            <h2 id="driverDashName" style="font-size: 1.5rem; font-weight: 700; color: var(--text-main);">Driver Portal</h2>
+            <span class="status-pill-saas valid" id="driverDashStatus">ACTIVE</span>
           </div>
           <div class="driver-badge-group">
-            <span class="meta-chip"><i class="fa-solid fa-user"></i> Username: <strong id="driverDashUsername">-</strong></span>
-            <span class="meta-chip"><i class="fa-solid fa-car"></i> Vehicle: <strong id="driverDashVehicle">-</strong></span>
-            <span class="meta-chip"><i class="fa-solid fa-wrench"></i> Model: <strong id="driverDashModel">-</strong></span>
-            <span class="meta-chip"><i class="fa-solid fa-id-card"></i> License: <strong id="driverDashLicense">-</strong></span>
-            <span class="meta-chip"><i class="fa-solid fa-phone"></i> <strong id="driverDashPhone">-</strong></span>
+            <span class="meta-chip">Username: <strong id="driverDashUsername">-</strong></span>
+            <span class="meta-chip">Vehicle: <strong id="driverDashVehicle">-</strong></span>
+            <span class="meta-chip">Model: <strong id="driverDashModel">-</strong></span>
+            <span class="meta-chip">License: <strong id="driverDashLicense">-</strong></span>
+            <span class="meta-chip"><strong id="driverDashPhone">-</strong></span>
           </div>
         </div>
 
         <button class="btn-saas btn-saas-secondary btn-sm" onclick="handleSignOut()">
-          <i class="fa-solid fa-arrow-right-from-bracket"></i> Log Out
+          <i class="fa-solid fa-power-off" style="font-size: 0.78rem;"></i> Sign Out
         </button>
       </div>
 
       <!-- Navigation Tabs -->
       <div class="driver-subnav">
         <button class="subnav-btn active" id="tabDriverVaultBtn" onclick="switchDriverDashTab('vault')">
-          <i class="fa-solid fa-folder-closed"></i> Verified Document Vault
+          Document Vault
         </button>
         <button class="subnav-btn" id="tabDriverLedgerBtn" onclick="switchDriverDashTab('ledger')">
-          <i class="fa-solid fa-book"></i> Daily Financial Ledger Book
+          Daily Shift Book
         </button>
         <button class="subnav-btn" id="tabDriverFamilyBtn" onclick="switchDriverDashTab('family')">
-          <i class="fa-solid fa-users"></i> Family & Welfare Schemes
+          Family Welfare
         </button>
       </div>
 
-      <!-- Driver Tab A: Document Vault -->
+      <!-- Tab A: Document Vault -->
       <section id="driverDashTabVault">
-        <!-- Security Compliance Notice (Driver can view files & edit metadata, but cannot alter uploaded file) -->
         <div class="security-notice-badge">
           <i class="fa-solid fa-shield-halved"></i>
           <span>
-            <strong>Compliance Lock Active:</strong> You can view verified document files uploaded by administration and update issue dates, expiration dates, or policy numbers. Uploaded document files cannot be altered directly.
+            <strong>Compliance Lock Active:</strong> You can view verified document files uploaded by administration and update expiration dates or policy numbers.
           </span>
         </div>
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
           <div>
-            <h3 style="font-size: 1.25rem; font-weight: 800; color: #0F172A;">Your Verified Vault Documents</h3>
-            <p style="font-size: 0.85rem; color: #64748B;">Continuous countdown alerts for RC, License, and Insurance renewals.</p>
+            <h3 style="font-size: 1.2rem; font-weight: 600; color: var(--text-main);">Verified Vault Documents</h3>
+            <p style="font-size: 0.84rem; color: var(--text-muted);">Real-time expiry alerts for RC, License, and Insurance renewals.</p>
           </div>
           <button class="btn-saas btn-saas-secondary btn-sm" onclick="loadDriverPersonalVault()">
-            <i class="fa-solid fa-rotate"></i> Refresh
+            Refresh
           </button>
         </div>
 
@@ -391,43 +450,41 @@
         </div>
       </section>
 
-      <!-- Driver Tab B: Daily Financial Ledger -->
+      <!-- Tab B: Daily Financial Ledger -->
       <section id="driverDashTabLedger" style="display: none;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
           <div>
-            <h3 style="font-size: 1.25rem; font-weight: 800; color: #0F172A;">Daily Financial Shift Book</h3>
-            <p style="font-size: 0.85rem; color: #64748B;">Record daily trip fares and expenses to calculate your net earnings.</p>
+            <h3 style="font-size: 1.2rem; font-weight: 600; color: var(--text-main);">Daily Financial Shift Book</h3>
+            <p style="font-size: 0.84rem; color: var(--text-muted);">Record daily trip fares and expenses to calculate your net earnings.</p>
           </div>
           <button class="btn-saas btn-saas-primary btn-sm" onclick="openDriverAddLedgerModal()">
-            <i class="fa-solid fa-plus"></i> Record Shift Entry
+            <i class="fa-solid fa-plus" style="font-size: 0.75rem;"></i> Record Shift
           </button>
         </div>
 
-        <!-- Ledger KPI Cards -->
         <div class="saas-kpi-grid">
           <div class="saas-kpi-card">
             <span class="saas-kpi-label">Gross Income</span>
-            <div class="saas-kpi-value" id="driverLedgerIncome" style="color: #059669;">₹0.00</div>
+            <div class="saas-kpi-value" id="driverLedgerIncome" style="color: var(--brand-primary);">₹0.00</div>
             <span class="saas-kpi-meta">Shift fares collected</span>
           </div>
           <div class="saas-kpi-card">
             <span class="saas-kpi-label">Total Expenses</span>
-            <div class="saas-kpi-value" id="driverLedgerExpense" style="color: #DC2626;">₹0.00</div>
+            <div class="saas-kpi-value" id="driverLedgerExpense" style="color: var(--status-red-text);">₹0.00</div>
             <span class="saas-kpi-meta alert">Fuel, meals, & repairs</span>
           </div>
           <div class="saas-kpi-card">
-            <span class="saas-kpi-label">Net Profit</span>
-            <div class="saas-kpi-value" id="driverLedgerProfit" style="color: #D97706;">₹0.00</div>
+            <span class="saas-kpi-label">Net Margin</span>
+            <div class="saas-kpi-value" id="driverLedgerProfit" style="color: var(--status-amber-text);">₹0.00</div>
             <span class="saas-kpi-meta subtle">Calculated margin</span>
           </div>
           <div class="saas-kpi-card">
             <span class="saas-kpi-label">Logged Shifts</span>
             <div class="saas-kpi-value" id="driverLedgerDays">0</div>
-            <span class="saas-kpi-meta subtle">Daily work logs</span>
+            <span class="saas-kpi-meta subtle">Work entries</span>
           </div>
         </div>
 
-        <!-- Ledger Shift Entries Table -->
         <div class="saas-table-container">
           <table class="saas-table">
             <thead>
@@ -436,25 +493,23 @@
                 <th>Gross Income (₹)</th>
                 <th>Expense (₹)</th>
                 <th>Net Profit (₹)</th>
-                <th>Trip Notes & Reminders</th>
+                <th>Trip Notes</th>
               </tr>
             </thead>
             <tbody id="driverPersonalLedgerTableBody">
               <tr>
-                <td colspan="5" style="text-align: center; padding: 2rem; color: #94A3B8;">No records logged yet.</td>
+                <td colspan="5" style="text-align: center; padding: 2rem; color: var(--text-muted);">No records logged yet.</td>
               </tr>
             </tbody>
           </table>
         </div>
       </section>
 
-      <!-- Driver Tab C: Family Welfare -->
+      <!-- Tab C: Family Welfare -->
       <section id="driverDashTabFamily" style="display: none;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-          <div>
-            <h3 style="font-size: 1.25rem; font-weight: 800; color: #0F172A;">Family Welfare Scheme Beneficiaries</h3>
-            <p style="font-size: 0.85rem; color: #64748B;">Registered family members under Aaride healthcare and welfare coverage.</p>
-          </div>
+        <div style="margin-bottom: 1.5rem;">
+          <h3 style="font-size: 1.2rem; font-weight: 600; color: var(--text-main);">Family Welfare Beneficiaries</h3>
+          <p style="font-size: 0.84rem; color: var(--text-muted);">Registered family members under Aaride healthcare and welfare coverage.</p>
         </div>
         <div class="vault-cards-grid" id="driverPersonalFamilyGrid">
           <!-- Populated dynamically -->
@@ -465,32 +520,32 @@
   </main>
 
   <!-- ========================================================================
-       VIEW 4: ADMIN DASHBOARD (ISOLATED TO ADMINISTRATOR)
+       VIEW 4: ADMIN DASHBOARD
        ======================================================================== -->
   <main id="viewAdminDashboard" class="app-view">
-    <div style="max-width: 1240px; margin: 2rem auto; padding: 0 1.5rem;">
+    <div style="max-width: 1200px; margin: 2rem auto; padding: 0 1.5rem;">
       
       <!-- Admin Bar -->
-      <div class="driver-profile-saas-bar" style="background: #FFFFFF;">
+      <div class="driver-profile-saas-bar">
         <div>
           <div style="display: flex; align-items: center; gap: 0.65rem;">
-            <h2 style="font-size: 1.7rem; font-weight: 800; color: #0F172A;">Fleet Command Console</h2>
+            <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--text-main);">Fleet Command Console</h2>
             <span class="status-pill-saas valid">SUPER ADMIN</span>
           </div>
-          <p style="font-size: 0.85rem; color: #64748B; margin-top: 0.25rem;">
-            Full administrative authority over driver profiles, document vault mapping, and compliance telemetry.
+          <p style="font-size: 0.84rem; color: var(--text-muted); margin-top: 0.25rem;">
+            Full administrative control over driver records, document vault uploads, and compliance telemetry.
           </p>
         </div>
 
         <div style="display: flex; gap: 0.75rem;">
           <button class="btn-saas btn-saas-primary btn-sm" onclick="openAdminOnboardModal()">
-            <i class="fa-solid fa-user-plus"></i> Onboard Driver
+            <i class="fa-solid fa-user-plus" style="font-size: 0.75rem;"></i> Onboard Driver
           </button>
           <button class="btn-saas btn-saas-secondary btn-sm" onclick="openAdminUploadDocModal()">
-            <i class="fa-solid fa-cloud-arrow-up"></i> Upload Document
+            <i class="fa-solid fa-cloud-arrow-up" style="font-size: 0.75rem;"></i> Upload Document
           </button>
           <button class="btn-saas btn-saas-secondary btn-sm" onclick="handleSignOut()">
-            <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
+            <i class="fa-solid fa-power-off" style="font-size: 0.78rem;"></i> Sign Out
           </button>
         </div>
       </div>
@@ -500,22 +555,22 @@
         <div class="saas-kpi-card">
           <span class="saas-kpi-label">Active Drivers</span>
           <div class="saas-kpi-value" id="adminKpiDrivers">0</div>
-          <span class="saas-kpi-meta"><i class="fa-solid fa-arrow-up"></i> Fleet size</span>
+          <span class="saas-kpi-meta">Fleet size</span>
         </div>
         <div class="saas-kpi-card">
           <span class="saas-kpi-label">Vault Documents</span>
           <div class="saas-kpi-value" id="adminKpiVaultDocs">0</div>
-          <span class="saas-kpi-meta subtle">99.8% compliance</span>
+          <span class="saas-kpi-meta subtle">Verified records</span>
         </div>
         <div class="saas-kpi-card">
-          <span class="saas-kpi-label">Expiring Soon (30d)</span>
-          <div class="saas-kpi-value" id="adminKpiAlertDocs" style="color: #D97706;">0</div>
-          <span class="saas-kpi-meta alert">Needs renewal</span>
+          <span class="saas-kpi-label">Expiring Soon</span>
+          <div class="saas-kpi-value" id="adminKpiAlertDocs" style="color: var(--status-amber-text);">0</div>
+          <span class="saas-kpi-meta alert">Within 30 days</span>
         </div>
         <div class="saas-kpi-card">
           <span class="saas-kpi-label">Fleet Status</span>
-          <div class="saas-kpi-value" style="font-size: 1.5rem; color: #059669; padding-top: 0.35rem;">OPERATIONAL</div>
-          <span class="saas-kpi-meta subtle">All systems verified</span>
+          <div class="saas-kpi-value" style="font-size: 1.4rem; color: var(--brand-primary); padding-top: 0.25rem;">ONLINE</div>
+          <span class="saas-kpi-meta subtle">All systems operational</span>
         </div>
       </div>
 
@@ -525,12 +580,12 @@
           <h3 class="table-header-title">Driver Master Directory</h3>
           <span class="table-meta-note" id="adminTableCount">0 registered drivers</span>
         </div>
-        <div class="table-actions-row">
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
           <div class="search-box-saas">
-            <i class="fa-solid fa-magnifying-glass"></i>
+            <i class="fa-solid fa-magnifying-glass" style="color: var(--text-muted); font-size: 0.8rem;"></i>
             <input type="text" id="adminDirectorySearch" placeholder="Search driver, username, vehicle..." oninput="filterAdminFleetTable()" />
           </div>
-          <button class="btn-saas btn-saas-secondary btn-sm" onclick="loadAdminDashboardData()">
+          <button class="btn-saas btn-saas-secondary btn-sm" onclick="loadAdminDashboardData()" title="Refresh Data">
             <i class="fa-solid fa-rotate"></i>
           </button>
         </div>
@@ -552,8 +607,8 @@
           </thead>
           <tbody id="adminFleetTableBody">
             <tr>
-              <td colspan="8" style="text-align: center; padding: 2.5rem; color: #94A3B8;">
-                <i class="fa-solid fa-spinner fa-spin"></i> Loading registered drivers from Supabase...
+              <td colspan="8" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+                Loading registered drivers from Supabase...
               </td>
             </tr>
           </tbody>
@@ -567,40 +622,46 @@
        FOOTER
        ======================================================================== -->
   <footer class="saas-footer">
-    <p>© 2026 Aaride. Enterprise Fleet & Driver Management SaaS OS.</p>
+    <div style="max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+      <div class="brand-wrapper" onclick="navigateTo('landing')">
+        <div class="brand-icon-box" style="width: 28px; height: 28px; font-size: 0.9rem;">
+          <i class="fa-solid fa-play" style="transform: rotate(-90deg); font-size: 0.7rem;"></i>
+        </div>
+        <span class="brand-title" style="font-size: 1.1rem;">Aaride</span>
+      </div>
+      <div>© 2026 Aaride. Enterprise Fleet & Driver Management SaaS OS.</div>
+    </div>
   </footer>
 
   <!-- ========================================================================
        MODAL 1: DRIVER EDIT DOCUMENT METADATA MODAL
-       Allows driver to edit start date, end date, doc number, BUT NOT file_url!
        ======================================================================== -->
   <div class="modal-overlay" id="editDocMetadataModal">
     <div class="modal-card">
       <div class="modal-card-header">
         <h3 class="modal-card-title">Edit Document Details</h3>
-        <button class="auth-close-btn" style="position: static;" onclick="closeModal('editDocMetadataModal')">&times;</button>
+        <button class="auth-close-btn" onclick="closeModal('editDocMetadataModal')">&times;</button>
       </div>
       <form onsubmit="handleSaveDocMetadata(event)">
         <input type="hidden" id="editDocId" />
         <div class="modal-card-body">
-          
           <div class="security-notice-badge">
-            <i class="fa-solid fa-lock"></i>
-            <span>Uploaded document file is verified by administration and cannot be replaced by driver.</span>
+            <i class="fa-solid fa-shield-halved"></i>
+            <span>Uploaded file is verified and protected by administration.</span>
           </div>
 
           <div class="form-grid-2col">
             <div class="form-field span-full">
               <label>Document Type</label>
-              <input type="text" id="editDocType" class="saas-input" readonly style="background: #F1F5F9; color: #64748B;" />
+              <input type="text" id="editDocType" class="saas-input" readonly />
             </div>
 
             <div class="form-field span-full">
-              <label>Uploaded Document Reference File (View Only)</label>
-              <div class="readonly-file-chip">
-                <span id="editDocFileUrlPreview" style="font-family: monospace; font-size: 0.78rem; word-break: break-all;">-</span>
-                <a href="#" id="editDocFileUrlLink" target="_blank" rel="noopener noreferrer" class="btn-saas btn-saas-secondary btn-sm" style="flex-shrink: 0; margin-left: 0.5rem;">
-                  <i class="fa-solid fa-arrow-up-right-from-square"></i> View File
+              <label>Uploaded Document Reference File</label>
+              <div style="display: flex; align-items: center; gap: 0.5rem; background: var(--bg-surface-alt); border: 1px solid var(--border-light); padding: 0.6rem 0.85rem; border-radius: var(--radius-sm);">
+                <span id="editDocFileUrlPreview" style="font-family: monospace; font-size: 0.78rem; word-break: break-all; color: var(--text-body); flex: 1;">-</span>
+                <a href="#" id="editDocFileUrlLink" target="_blank" rel="noopener noreferrer" class="btn-saas btn-saas-secondary btn-sm" style="flex-shrink: 0;">
+                  View File
                 </a>
               </div>
             </div>
@@ -624,9 +685,7 @@
 
         <div class="modal-card-footer">
           <button type="button" class="btn-saas btn-saas-secondary btn-sm" onclick="closeModal('editDocMetadataModal')">Cancel</button>
-          <button type="submit" class="btn-saas btn-saas-primary btn-sm">
-            <i class="fa-solid fa-check"></i> Save Changes
-          </button>
+          <button type="submit" class="btn-saas btn-saas-primary btn-sm">Save Changes</button>
         </div>
       </form>
     </div>
@@ -634,20 +693,15 @@
 
   <!-- ========================================================================
        MODAL 2: ADMIN ONBOARD DRIVER MODAL
-       Full cleared content with automatic unique username and password generation
        ======================================================================== -->
   <div class="modal-overlay" id="adminOnboardDriverModal">
     <div class="modal-card">
       <div class="modal-card-header">
         <h3 class="modal-card-title">Onboard New Fleet Driver</h3>
-        <button class="auth-close-btn" style="position: static;" onclick="closeModal('adminOnboardDriverModal')">&times;</button>
+        <button class="auth-close-btn" onclick="closeModal('adminOnboardDriverModal')">&times;</button>
       </div>
       <form onsubmit="handleAdminOnboardDriver(event)">
         <div class="modal-card-body">
-          <p style="font-size: 0.85rem; color: #64748B; margin-bottom: 1.25rem;">
-            A unique username and secure temporary password will be automatically generated and guaranteed not to collide with prior users.
-          </p>
-
           <div class="form-grid-2col">
             <div class="form-field span-full">
               <label for="onboardFullName">Driver Full Name *</label>
@@ -660,12 +714,12 @@
             </div>
 
             <div class="form-field">
-              <label for="onboardEmail">Email (Used for username seed)</label>
+              <label for="onboardEmail">Email (Optional)</label>
               <input type="email" id="onboardEmail" class="saas-input" placeholder="e.g. murugan@aaride.com" />
             </div>
 
             <div class="form-field">
-              <label for="onboardVehicleNumber">Vehicle Registration Number *</label>
+              <label for="onboardVehicleNumber">Vehicle Number *</label>
               <input type="text" id="onboardVehicleNumber" required class="saas-input" placeholder="e.g. TN 28 AB 3456" style="text-transform: uppercase;" />
             </div>
 
@@ -684,7 +738,7 @@
         <div class="modal-card-footer">
           <button type="button" class="btn-saas btn-saas-secondary btn-sm" onclick="closeModal('adminOnboardDriverModal')">Cancel</button>
           <button type="submit" class="btn-saas btn-saas-primary btn-sm" id="btnAdminOnboardSubmit">
-            <i class="fa-solid fa-user-plus"></i> Generate Credentials & Onboard
+            Onboard Driver
           </button>
         </div>
       </form>
@@ -697,35 +751,35 @@
   <div class="modal-overlay" id="driverCredentialsModal">
     <div class="modal-card">
       <div class="modal-card-header">
-        <h3 class="modal-card-title"><i class="fa-solid fa-circle-check" style="color: #059669;"></i> Driver Onboarded</h3>
-        <button class="auth-close-btn" style="position: static;" onclick="closeModal('driverCredentialsModal')">&times;</button>
+        <h3 class="modal-card-title">Driver Onboarded</h3>
+        <button class="auth-close-btn" onclick="closeModal('driverCredentialsModal')">&times;</button>
       </div>
       <div class="modal-card-body" style="text-align: center;">
-        <p style="color: #475569; font-size: 0.95rem; margin-bottom: 1.25rem;">
-          Driver profile created. Share these unique login credentials with the driver:
+        <p style="color: var(--text-body); font-size: 0.9rem; margin-bottom: 1.25rem;">
+          Driver profile created. Share these login credentials with the driver:
         </p>
 
-        <div style="background: #F8FAFC; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 1.25rem; text-align: left;">
-          <div style="display: flex; justify-content: space-between; margin-bottom: 0.65rem;">
-            <span style="color: #64748B;">Full Name:</span>
-            <strong id="credName" style="color: #0F172A;">-</strong>
+        <div style="background: var(--bg-surface-alt); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 1.25rem; text-align: left; display: flex; flex-direction: column; gap: 0.65rem;">
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--text-muted); font-size: 0.85rem;">Full Name:</span>
+            <strong id="credName" style="color: var(--text-main); font-size: 0.88rem;">-</strong>
           </div>
-          <div style="display: flex; justify-content: space-between; margin-bottom: 0.65rem;">
-            <span style="color: #64748B;">Generated Username:</span>
-            <code id="credUsername" style="color: var(--brand-teal); font-weight: 800; font-size: 1rem;">-</code>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--text-muted); font-size: 0.85rem;">Generated Username:</span>
+            <code id="credUsername" style="color: var(--brand-primary); font-weight: 700; font-size: 0.95rem;">-</code>
           </div>
-          <div style="display: flex; justify-content: space-between; margin-bottom: 0.65rem;">
-            <span style="color: #64748B;">Phone:</span>
-            <strong id="credPhone" style="color: #0F172A;">-</strong>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--text-muted); font-size: 0.85rem;">Phone:</span>
+            <strong id="credPhone" style="color: var(--text-main); font-size: 0.88rem;">-</strong>
           </div>
           <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 0.4rem; border-top: 1px dashed var(--border-light);">
-            <span style="color: #64748B;">Generated Temporary Password:</span>
-            <span id="credPassword" style="background: #01382B; color: #34D399; padding: 0.25rem 0.75rem; border-radius: 4px; font-weight: 800; font-size: 1rem;">-</span>
+            <span style="color: var(--text-muted); font-size: 0.85rem;">Temporary Password:</span>
+            <span id="credPassword" style="background: var(--brand-emerald-dark); color: var(--brand-primary); padding: 0.2rem 0.65rem; border-radius: 4px; font-weight: 700; font-size: 0.95rem;">-</span>
           </div>
         </div>
 
         <button class="btn-saas btn-saas-secondary btn-sm" style="margin-top: 1.25rem;" onclick="copyCredentials()">
-          <i class="fa-regular fa-copy"></i> Copy Credentials to Clipboard
+          <i class="fa-regular fa-copy" style="font-size: 0.78rem;"></i> Copy Credentials
         </button>
       </div>
       <div class="modal-card-footer">
@@ -741,21 +795,21 @@
     <div class="modal-card">
       <div class="modal-card-header">
         <h3 class="modal-card-title">Map Document to Driver Vault</h3>
-        <button class="auth-close-btn" style="position: static;" onclick="closeModal('adminUploadDocModal')">&times;</button>
+        <button class="auth-close-btn" onclick="closeModal('adminUploadDocModal')">&times;</button>
       </div>
       <form onsubmit="handleAdminUploadDoc(event)">
         <div class="modal-card-body">
           <div class="form-grid-2col">
             <div class="form-field span-full">
               <label for="adminDocDriverSelect">Target Driver *</label>
-              <select id="adminDocDriverSelect" required class="saas-select" style="width: 100%;">
+              <select id="adminDocDriverSelect" required class="saas-select">
                 <option value="">-- Choose Driver --</option>
               </select>
             </div>
 
             <div class="form-field">
               <label for="adminDocType">Document Type *</label>
-              <select id="adminDocType" required class="saas-select" style="width: 100%;">
+              <select id="adminDocType" required class="saas-select">
                 <option value="Driving License">Driving License</option>
                 <option value="RC Book">RC Book (Registration)</option>
                 <option value="Vehicle Insurance">Vehicle Insurance</option>
@@ -773,13 +827,13 @@
             <div class="form-field span-full">
               <label for="adminDocFileInput">Choose Document File (PDF, PNG, JPG) *</label>
               <div class="file-upload-dropzone" onclick="document.getElementById('adminDocFileInput').click()">
-                <i class="fa-solid fa-cloud-arrow-up" style="font-size: 2rem; color: var(--brand-teal); margin-bottom: 0.5rem;"></i>
-                <div style="font-size: 0.95rem; font-weight: 700; color: #0F172A;">Click to browse or drop document file here</div>
-                <div style="font-size: 0.78rem; color: #64748B; margin-top: 0.25rem;">
-                  Directly uploads to Supabase Storage bucket: <strong>driver-documents</strong> (Max 15MB)
+                <i class="fa-solid fa-cloud-arrow-up" style="font-size: 1.8rem; color: var(--brand-primary); margin-bottom: 0.4rem;"></i>
+                <div style="font-size: 0.92rem; font-weight: 600; color: var(--text-main);">Click to browse or drop document file here</div>
+                <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.25rem;">
+                  Directly uploads to Supabase Storage: <strong>driver-documents</strong> (Max 25MB)
                 </div>
-                <div id="fileSelectedBadge" style="display: none; margin-top: 0.75rem; background: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46; padding: 0.35rem 0.85rem; border-radius: 9999px; font-weight: 700; font-size: 0.82rem;">
-                  <i class="fa-solid fa-file-circle-check"></i> <span id="fileSelectedName">No file selected</span>
+                <div id="fileSelectedBadge" style="display: none; margin-top: 0.65rem; background: var(--status-green-bg); border: 1px solid var(--status-green-border); color: var(--status-green-text); padding: 0.3rem 0.8rem; border-radius: var(--radius-full); font-weight: 600; font-size: 0.8rem;">
+                  <span id="fileSelectedName">No file selected</span>
                 </div>
               </div>
               <input type="file" id="adminDocFileInput" name="file" required accept=".pdf,image/png,image/jpeg,image/webp,image/jpg" style="display: none;" onchange="handleFileSelection(event)" />
@@ -806,13 +860,13 @@
   </div>
 
   <!-- ========================================================================
-       MODAL 5: DRIVER ADD DAILY SHIFT LEDGER
+       MODAL 5: DRIVER RECORD DAILY SHIFT
        ======================================================================== -->
   <div class="modal-overlay" id="driverAddLedgerModal">
     <div class="modal-card">
       <div class="modal-card-header">
         <h3 class="modal-card-title">Record Daily Shift Ledger</h3>
-        <button class="auth-close-btn" style="position: static;" onclick="closeModal('driverAddLedgerModal')">&times;</button>
+        <button class="auth-close-btn" onclick="closeModal('driverAddLedgerModal')">&times;</button>
       </div>
       <form onsubmit="handleDriverAddLedger(event)">
         <div class="modal-card-body">
@@ -823,19 +877,19 @@
             </div>
 
             <div class="form-field">
-              <label for="driverShiftIncome">Gross Income / Fares (₹) *</label>
+              <label for="driverShiftIncome">Gross Income (₹) *</label>
               <input type="number" step="0.01" min="0" id="driverShiftIncome" required class="saas-input" placeholder="e.g. 1850" oninput="calculateDriverModalProfit()" />
             </div>
 
             <div class="form-field">
-              <label for="driverShiftExpense">Daily Expenses (Fuel/Meals) (₹) *</label>
+              <label for="driverShiftExpense">Daily Expenses (₹) *</label>
               <input type="number" step="0.01" min="0" id="driverShiftExpense" required class="saas-input" placeholder="e.g. 450" oninput="calculateDriverModalProfit()" />
             </div>
 
             <div class="form-field span-full">
-              <div class="profit-calculation-card">
-                <span>Calculated Net Shift Margin:</span>
-                <strong id="driverModalProfitPreview">₹0.00</strong>
+              <div style="background: var(--bg-surface-alt); border: 1px solid var(--border-light); padding: 0.75rem 1rem; border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.84rem; color: var(--text-body);">Calculated Net Margin:</span>
+                <strong id="driverModalProfitPreview" style="color: var(--brand-primary); font-size: 1.05rem;">₹0.00</strong>
               </div>
             </div>
 

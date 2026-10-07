@@ -201,24 +201,51 @@ export async function uploadDocument(req: Request, res: Response<ApiResponse>): 
       expiry_date,
     } = req.body;
 
+    if (!driver_id || !doc_type) {
+      res.status(400).json({
+        success: false,
+        error: 'Target driver and document type are required.',
+      });
+      return;
+    }
+
+    // 1. Verify driver exists first
+    const { data: driver, error: driverCheckError } = await supabase
+      .from('drivers')
+      .select('id, full_name')
+      .eq('id', driver_id)
+      .maybeSingle();
+
+    if (driverCheckError || !driver) {
+      console.warn(`[uploadDocument] Driver lookup failed for id=${driver_id}:`, driverCheckError?.message);
+      res.status(404).json({
+        success: false,
+        error: `Target driver was not found: ${driverCheckError?.message || 'Invalid driver ID'}`,
+      });
+      return;
+    }
+
     let targetFileUrl = req.body.file_url ? String(req.body.file_url).trim() : '';
 
-    // Handle physical file upload to Supabase Storage bucket 'driver-documents'
+    // 2. Handle physical file upload to Supabase Storage bucket 'driver-documents'
     if (req.file) {
       const file = req.file;
       const fileExt = path.extname(file.originalname) || '.pdf';
       const cleanType = String(doc_type || 'document').toLowerCase().replace(/[^a-z0-9]/g, '_');
       const storagePath = `${driver_id}/${cleanType}_${Date.now()}${fileExt}`;
 
+      console.log(`[uploadDocument] Uploading ${file.size} bytes to Supabase bucket 'driver-documents' at ${storagePath}`);
+
       // Upload buffer to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('driver-documents')
         .upload(storagePath, file.buffer, {
-          contentType: file.mimetype,
+          contentType: file.mimetype || 'application/octet-stream',
           upsert: true,
         });
 
       if (uploadError) {
+        console.error('[uploadDocument] Supabase Storage upload error:', uploadError);
         res.status(500).json({
           success: false,
           error: `Supabase Storage upload failed: ${uploadError.message}`,
@@ -232,46 +259,45 @@ export async function uploadDocument(req: Request, res: Response<ApiResponse>): 
         .getPublicUrl(storagePath);
 
       targetFileUrl = urlData.publicUrl;
+      console.log('[uploadDocument] Successfully generated public URL:', targetFileUrl);
     }
 
-    if (!driver_id || !doc_type || !targetFileUrl) {
+    if (!targetFileUrl) {
       res.status(400).json({
         success: false,
-        error: 'driver_id, doc_type, and an uploaded file or file_url are mandatory.',
+        error: 'Please choose a document file to upload.',
       });
       return;
     }
 
-    // Verify driver exists
-    const { data: driver, error: driverCheckError } = await supabase
-      .from('drivers')
-      .select('id, full_name')
-      .eq('id', driver_id)
-      .maybeSingle();
+    // 3. Clean dates for PostgreSQL DATE columns
+    const cleanIssue = issue_date && String(issue_date).trim() ? String(issue_date).trim() : null;
+    const cleanExpiry = expiry_date && String(expiry_date).trim() ? String(expiry_date).trim() : null;
 
-    if (driverCheckError || !driver) {
-      res.status(404).json({
+    if (!cleanExpiry) {
+      res.status(400).json({
         success: false,
-        error: 'Target driver was not found.',
+        error: 'Document expiry date is mandatory.',
       });
       return;
     }
 
-    // Insert document record into `driver_documents`
+    // 4. Insert document record into `driver_documents`
     const { data: document, error: docError } = await supabase
       .from('driver_documents')
       .insert({
         driver_id,
         doc_type: String(doc_type).trim(),
-        doc_number: doc_number ? String(doc_number).trim() : null,
+        doc_number: doc_number && String(doc_number).trim() ? String(doc_number).trim() : null,
         file_url: targetFileUrl,
-        issue_date: issue_date || null,
-        expiry_date: expiry_date || null,
+        issue_date: cleanIssue,
+        expiry_date: cleanExpiry,
       })
       .select()
       .single();
 
     if (docError) {
+      console.error('[uploadDocument] Database insert error:', docError);
       res.status(500).json({
         success: false,
         error: `Failed to link document: ${docError.message}`,
@@ -285,6 +311,7 @@ export async function uploadDocument(req: Request, res: Response<ApiResponse>): 
       data: document,
     });
   } catch (err: any) {
+    console.error('[uploadDocument Exception]:', err);
     res.status(500).json({
       success: false,
       error: `Internal server error: ${err.message || 'Unknown error'}`,

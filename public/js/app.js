@@ -19,6 +19,7 @@ const API_BASE = '/api';
 // INITIALIZATION
 // =============================================================================
 document.addEventListener('DOMContentLoaded', () => {
+  initTheme();
   checkApiHealth();
   initRouter();
   loadLandingKpis();
@@ -40,21 +41,21 @@ async function checkApiHealth() {
     const res = await fetch(`${API_BASE}/health`);
     const data = await res.json();
     if (res.ok && data.status === 'ONLINE') {
-      text.textContent = 'Live Telemetry';
-      pill.style.background = '#ECFDF5';
-      pill.style.borderColor = '#A7F3D0';
-      pill.style.color = '#047857';
+      text.textContent = 'Live';
+      pill.style.background = 'var(--status-green-bg)';
+      pill.style.borderColor = 'var(--status-green-border)';
+      pill.style.color = 'var(--status-green-text)';
     } else {
       text.textContent = 'Degraded';
-      pill.style.background = '#FFFBEB';
-      pill.style.borderColor = '#FDE68A';
-      pill.style.color = '#B45309';
+      pill.style.background = 'var(--status-amber-bg)';
+      pill.style.borderColor = 'var(--status-amber-border)';
+      pill.style.color = 'var(--status-amber-text)';
     }
   } catch (err) {
-    text.textContent = 'Telemetry Offline';
-    pill.style.background = '#FEF2F2';
-    pill.style.borderColor = '#FECACA';
-    pill.style.color = '#B91C1C';
+    text.textContent = 'Offline';
+    pill.style.background = 'var(--status-red-bg)';
+    pill.style.borderColor = 'var(--status-red-border)';
+    pill.style.color = 'var(--status-red-text)';
   }
 }
 
@@ -958,3 +959,41 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
 }
+
+// =============================================================================
+// THEME MANAGEMENT (DARK / LIGHT MODE - AARCODE DESIGN)
+// =============================================================================
+function initTheme() {
+  const savedTheme = localStorage.getItem('aaride_theme') || 'dark';
+  setTheme(savedTheme);
+}
+
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('aaride_theme', theme);
+  const icon = document.getElementById('themeIcon');
+  if (icon) {
+    if (theme === 'light') {
+      icon.className = 'fa-solid fa-moon';
+    } else {
+      icon.className = 'fa-solid fa-sun';
+    }
+  }
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'dark';
+  const target = current === 'dark' ? 'light' : 'dark';
+  setTheme(target);
+}
+
+// =============================================================================
+// FAQ ACCORDION (AARCODE REPLICA)
+// =============================================================================
+function toggleFaq(headerEl) {
+  const item = headerEl.closest('.faq-item');
+  if (item) {
+    item.classList.toggle('active');
+  }
+}
+
